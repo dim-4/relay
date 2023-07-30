@@ -74,6 +74,8 @@ class Relay:
                             " parameter for the '@receives' decorator to work.")
 
         annotations = params['event'].annotation
+        if annotations is Event:
+            annotations = Event[Any]
         origin = get_origin(annotations)
         if origin is not Event:
             raise TypeError("The @receives decorator can only be applied to "

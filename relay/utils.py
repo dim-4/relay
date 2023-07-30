@@ -79,6 +79,9 @@ def type_check(value, type_hint:BaseModel|Any) -> bool:
     - NotImplementedError: If the function encounters an unsupported 
       parameterized Callable type hint.
     """
+    if type_hint is Any:
+        return True
+    
     if value is None and type_hint in (None, type(None)):
         return True
     if value is not None and type_hint in (None, type(None)):

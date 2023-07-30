@@ -1,7 +1,7 @@
 import pytest
+
 from pydantic import BaseModel, ValidationError
-from typing import Union, List, Tuple, Set, Dict, Literal, Callable, get_origin, get_args
-import collections.abc as abc
+from typing import Callable, Dict, List, Literal, Set, Tuple, Union
 from relay.utils import type_check
 
 # Test for Basic Types and User-Defined Classes

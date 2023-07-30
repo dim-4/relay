@@ -1,3 +1,4 @@
+""" testing @receives decorator inside the Relay class """
 import pytest
 
 from pydantic import BaseModel
@@ -31,6 +32,10 @@ class DummyRelay(Relay):
     @Relay.receives
     def some_method_with_event(self, event: Event[SomeModel]):
         return event.data.message
+    
+    @Relay.receives
+    def method_with_no_event_type(self, event:Event):
+        return event.data
 
 
 def test_receives_data_validation():
@@ -56,3 +61,22 @@ def test_receives_data_validation():
                           f"hinted to the decorated method "
                           f"'{relay_instance.some_method_with_event.__name__}"
                           "(self, event:Event[T])'.")
+
+def test_receives_no_data_validation():
+    """Test @receives decorator when no type hint is provided for event."""
+    relay_instance = DummyRelay()
+
+    # Test with a variety of data types since there's no specific type to validate against
+    test_data = [
+        SomeModel(message="Valid"),
+        {"not_a_message": "Invalid"},
+        "random_string",
+        12345,
+        [1, 2, 3, 4],
+        (5, 6, 7, 8),
+        None
+    ]
+    for data in test_data:
+        event = Event(data=data)
+        assert relay_instance.method_with_no_event_type(event) == data
+
