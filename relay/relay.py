@@ -74,6 +74,7 @@ class Relay:
                             " parameter for the '@receives' decorator to work.")
 
         annotation = params['event'].annotation
+        # If the annotation is just `Event` without a type hint, set it to Any
         if annotation is Event:
             annotation = Event[Any]
         origin = get_origin(annotation)
