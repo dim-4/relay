@@ -34,7 +34,7 @@ class DummyRelay(Relay):
 
 
 def test_receives_data_validation():
-    """Test that the @receives correctly validates the data type of the event."""
+    """Test @receives decorator for event data type validation."""
     relay_instance = DummyRelay()
 
     # valid because some_method_with_event expects an Event[SomeModel]

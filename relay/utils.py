@@ -79,6 +79,11 @@ def type_check(value, type_hint:BaseModel|Any) -> bool:
     - NotImplementedError: If the function encounters an unsupported 
       parameterized Callable type hint.
     """
+    if value is None and type_hint in (None, type(None)):
+        return True
+    if value is not None and type_hint in (None, type(None)):
+        return False
+
     # If the type_hint is a subclass of BaseModel, use Pydantic's validation
     if issubclass(type(type_hint), BaseModel):
         try:
@@ -96,15 +101,36 @@ def type_check(value, type_hint:BaseModel|Any) -> bool:
     # Handle List[type] or List[List[type]] and so on
     if origin == list:
         args = get_args(type_hint)
-        return (isinstance(value, list) and 
-                all(type_check(item, args[0]) for item in value))
-    
-    # Handle Tuple[type] or Tuple[Tuple[type]] and so on
+        # If no type argument is provided for List, accept any list
+        if not args:
+            return isinstance(value, list)
+        if not isinstance(value, list):
+            return False
+        if len(args) == 1:
+            if len(value) == 0:
+                return True
+            return all(type_check(item, args[0]) for item in value)
+        if len(args) != len(value):
+            return False
+        return all(type_check(item, arg) for item, arg in zip(value, args))
+   
+    # Handle Tuple[type, ...] or Tuple[Tuple[type, ...], ...] and so on
     if origin == tuple:
         args = get_args(type_hint)
-        return (isinstance(value, tuple) and
-                all(type_check(item, args[0]) for item in value))
-    
+        # If no type arguments are provided for Tuple, accept any tuple
+        if not args:
+            return isinstance(value, tuple)
+        if not isinstance(value, tuple):
+            return False
+        if len(args) == 1:
+            if len(value) == 0:
+                return True
+            return all(type_check(item, args[0]) for item in value)
+        # Check if the tuple length matches the length of the type hint
+        if len(args) != len(value):
+            return False
+        return all(type_check(item, arg) for item, arg in zip(value, args))
+
     # Handle Set[type] or Set[Set[type]] and so on
     if origin == set:
         args = get_args(type_hint)
@@ -119,7 +145,7 @@ def type_check(value, type_hint:BaseModel|Any) -> bool:
                     type_check(v, val_type) for k, v in value.items()))
 
     # Handle Union types (which includes Optional)
-    if origin is types.UnionType or origin is Union:
+    if origin is UnionType or origin is Union:
         allowed_types = get_args(type_hint)
         return any(type_check(value, t) for t in allowed_types)
 

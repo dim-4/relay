@@ -82,4 +82,3 @@ class Event(Generic[T], BaseModel):
         return (f"Event(data={truncate(data_repr, 50)}, channel={channel_repr}, "
                 f"event_type={event_type_repr}, source={source_repr}, "
                 f"time={time_repr})")
-

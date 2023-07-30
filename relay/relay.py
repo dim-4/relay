@@ -7,7 +7,12 @@ from .utils import type_check, truncate
 
 
 class Relay:
-    pass
+
+
+    class NoEmit(BaseModel):
+        """ tells @emits wrapper not to emit the event, just return the data """
+        data: Any
+
 
     @classmethod
     def receives(cls, func):
