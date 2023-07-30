@@ -96,7 +96,10 @@ def type_check(value, type_hint:BaseModel|Any) -> bool:
 
     # for basic types (int, str, etc.) and user-defined classes
     if not origin:
-        return isinstance(value, type_hint)
+        try:
+            return isinstance(value, type_hint)
+        except:
+            raise TypeError(f"Type '{type_hint}' is not supported.")
 
     # Handle List[type] or List[List[type]] and so on
     if origin == list:

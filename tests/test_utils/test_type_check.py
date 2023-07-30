@@ -4,7 +4,6 @@ from typing import Union, List, Tuple, Set, Dict, Literal, Callable, get_origin,
 import collections.abc as abc
 from relay.utils import type_check
 
-
 # Test for Basic Types and User-Defined Classes
 @pytest.mark.parametrize("value, type_hint, expected", [
     (5, int, True),
@@ -98,3 +97,32 @@ def test_pydantic_base_model(value, type_hint, expected):
 def test_typing_constructs(value, type_hint, expected):
     type_check(value, type_hint) == expected
     assert type_check(value, type_hint) == expected
+
+# Test for Typing Constructs - Union, Literal, Callable
+@pytest.mark.parametrize("value, type_hint, expected", [
+    (1, Union[int, str], True),
+    (1, int|str, True),
+    ("hello", Union[int, str], True),
+    (1.0, Union[int, str], False),
+    ("apple", Literal["apple", "banana"], True),
+    ("cherry", Literal["apple", "banana"], False),
+    (lambda x: x+1, Callable, True),
+    ("not_callable", Callable, False),
+])
+def test_union_literal_callable(value, type_hint, expected):
+    assert type_check(value, type_hint) == expected
+
+# Test for Errors - ValidationError, TypeError, NotImplementedError
+def test_error_cases():
+
+    # TypeError
+    unsupported_type = "unsupported_type"
+    with pytest.raises(TypeError) as e:
+        type_check(5, unsupported_type)
+    assert str(e.value) == f"Type '{unsupported_type}' is not supported."
+    
+    # NotImplementedError
+    with pytest.raises(NotImplementedError) as e:
+        type_check(lambda x, y: x+y, Callable[[int, str], bool])
+    assert (str(e.value) == "Callable type hints with parameters "
+            "(ex: Callable[[int, str], bool]) are not supported yet.")
