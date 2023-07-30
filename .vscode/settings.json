@@ -1,0 +1,67 @@
+{
+    "python.autoComplete.extraPaths": [
+        "APP"
+    ],
+    "python.analysis.extraPaths": [
+        "APP"
+    ],
+
+    "workbench.colorCustomizations": {
+        // "activityBar.foreground": "#ff0000",
+        // "activityBarBadge.background": "#ff0000",
+    },
+
+    "editor.tokenColorCustomizations": {
+        "comments": {"fontStyle": "italic bold", "foreground": "#8d73bc"},
+        "strings": "#F67280", //"#d94015",
+        "functions": "#ffa657",
+        "numbers": "#57bdd4",
+        // async, def, await, while, ...
+        "keywords": {"foreground": "#f8564a", "fontStyle": "bold"},
+        "textMateRules": [
+            {   "scope": ["keyword.control"],
+                "settings": {"foreground": "#f8564a", "fontStyle": "bold"}
+            }, // if, else, pass, in, return, ...
+
+            {   "scope": "keyword.operator.assignment",
+                "settings": {"foreground": "#c82cb3"}
+            }, // = (assignment)
+            {
+                "scope": "constant.character.escape",
+                "settings": {
+                    "foreground": "#ff0000"
+                }
+            }, // \n, \t, ...
+            {
+                "scope": "keyword.codetag.notation.python",
+                "settings": {
+                    "foreground": "#afafbb",
+                    "fontStyle": "bold"
+                }
+            } // NOTE, TODO, FIXME, XXX, ...
+        ]
+    },
+
+    "editor.semanticTokenColorCustomizations": {
+        "enabled": true,
+        "rules": {
+            "class": {"foreground": "#2cc88c", "fontStyle": "bold"},
+            // int, str, None, print, range, ...
+            "*.builtin": {"foreground": "#2cc88c", "fontStyle": ""},
+            "*.decorator": "#FFA657",
+            "parameter": "#e8f491",
+            "variable": "#a4cef3",  // outter variables
+            "magicFunction": {"fontStyle": "italic"},
+            "selfParameter": {"foreground": "#b4d6f4", "bold": true},
+            "clsParameter": {"foreground": "#b4d6f4", "bold": true},
+            "property": {
+                "foreground": "#b4d6f4", 
+                "fontStyle": ""
+            },
+            "module": {"foreground": "#b4d6f4", "fontStyle": "underline"},
+            "*.readonly": {"foreground": "#b4d6f4", "fontStyle": "bold"},
+            "builtinConstant": "#6591b7",
+            "variable.unused": "#FF0000",
+        },
+    },
+}
