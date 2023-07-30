@@ -73,16 +73,16 @@ class Relay:
             raise TypeError(f"The method '{func.__name__}' must have an 'event'"
                             " parameter for the '@receives' decorator to work.")
 
-        annotations = params['event'].annotation
-        if annotations is Event:
-            annotations = Event[Any]
-        origin = get_origin(annotations)
+        annotation = params['event'].annotation
+        if annotation is Event:
+            annotation = Event[Any]
+        origin = get_origin(annotation)
         if origin is not Event:
             raise TypeError("The @receives decorator can only be applied to "
                             "methods with `Event` as their parameter type.")
         
         # Get the actual data schema from the annotation
-        event_args = get_args(annotations)
+        event_args = get_args(annotation)
         event_schema:BaseModel = None
         if event_args:  # assumes first annotated argument is the event schema
             event_schema = event_args[0]
