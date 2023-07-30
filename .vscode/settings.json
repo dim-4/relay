@@ -1,9 +1,9 @@
 {
     "python.autoComplete.extraPaths": [
-        "APP"
+        // "APP"
     ],
     "python.analysis.extraPaths": [
-        "APP"
+        // "APP"
     ],
 
     "workbench.colorCustomizations": {

@@ -1,6 +1,6 @@
 from __future__ import annotations
-from time import time
 from pydantic import BaseModel, Field
+from time import time
 from typing import (Any, Callable, Generic, NamedTuple, 
                     Optional, TYPE_CHECKING, TypeVar)
 from .consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE
@@ -19,7 +19,7 @@ class SourceInfo(BaseModel):
 
 T = TypeVar('T', bound=Any)
 
-class Event(BaseModel, Generic[T]):
+class Event(Generic[T], BaseModel):
     """
     Represents a generic event with data of type `T`.
 
@@ -82,3 +82,4 @@ class Event(BaseModel, Generic[T]):
         return (f"Event(data={truncate(data_repr, 50)}, channel={channel_repr}, "
                 f"event_type={event_type_repr}, source={source_repr}, "
                 f"time={time_repr})")
+
