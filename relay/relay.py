@@ -60,7 +60,13 @@ class Relay:
 
             @receives
             def some_method(self, event: Event[SomeModel]):
+                # NOTE: event.data will be validated against SomeModel
                 # some logic here
+
+            @receives
+            def some_other_method(self, event: Event):
+                # NOTE: event.data will not be validated
+                # some other logic here
         ```
 
         Note:

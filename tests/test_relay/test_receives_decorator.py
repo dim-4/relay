@@ -66,7 +66,8 @@ def test_receives_no_data_validation():
     """Test @receives decorator when no type hint is provided for event."""
     relay_instance = DummyRelay()
 
-    # Test with a variety of data types since there's no specific type to validate against
+    # Test with a variety of data types since there's no specific 
+    # type to validate against
     test_data = [
         SomeModel(message="Valid"),
         {"not_a_message": "Invalid"},
@@ -79,4 +80,3 @@ def test_receives_no_data_validation():
     for data in test_data:
         event = Event(data=data)
         assert relay_instance.method_with_no_event_type(event) == data
-
