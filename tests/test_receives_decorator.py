@@ -55,4 +55,4 @@ def test_receives_data_validation():
                           f"does not match the inferred type {SomeModel} "
                           f"hinted to the decorated method "
                           f"'{relay_instance.some_method_with_event.__name__}"
-                          "(self, event:Event[ ])'.")
+                          "(self, event:Event[T])'.")

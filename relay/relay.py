@@ -88,6 +88,6 @@ class Relay:
                                 f"of type {type(event.data)} does not "
                                 f"match the inferred type {event_schema} "
                                 "hinted to the decorated method "
-                                f"'{func.__name__}(self, event:Event[ ])'.")
+                                f"'{func.__name__}(self, event:Event[T])'.")
             return func(self, event, *args, **kwargs)
         return wrapper
