@@ -115,20 +115,20 @@ class Bindings:
                      event_type:str,
                      filter_:Binding|Listener|Emitter=Binding
     ) -> list[Binding]:
-        # should include wildcard channel and event_type
-        # Get the direct bindings from channel and event_type.
-        direct_bindings = cls._by_chnl_and_type.get(channel, {}).get(event_type, [])
+        raise NotImplementedError
+        # # Get the direct bindings from channel and event_type.
+        # direct_bindings = cls._by_chnl_and_type[channel][event_type]
 
-        # Incorporate wildcard retrieval if necessary.
-        wildcard_channel_bindings = cls._by_chnl_and_type.get('*', {}).get(event_type, [])
-        wildcard_event_bindings = cls._by_chnl_and_type.get(channel, {}).get('*', [])
-        wildcard_all_bindings = cls._by_chnl_and_type.get('*', {}).get('*', [])
+        # # Incorporate wildcard retrieval if necessary.
+        # wildcard_channel_bindings = cls._by_chnl_and_type['*'][event_type]
+        # wildcard_event_bindings = cls._by_chnl_and_type[channel]['*']
+        # wildcard_all_bindings = cls._by_chnl_and_type['*']['*']
 
-        all_bindings = (direct_bindings + wildcard_channel_bindings + 
-                        wildcard_event_bindings + wildcard_all_bindings)
+        # all_bindings = (direct_bindings + wildcard_channel_bindings + 
+        #                 wildcard_event_bindings + wildcard_all_bindings)
 
-        # Filter based on the given filter.
-        return [b for b in all_bindings if matches_type(b, filter_)]
+        # # Filter based on the given filter.
+        # return [b for b in all_bindings if matches_type(b, filter_)]
 
     @classmethod
     def get_by_relay(cls, 
