@@ -70,3 +70,29 @@ def test_get_by_function_no_bindings():
     bindings = Bindings.get_by_function(standalone_function)
     assert len(bindings) == 0  # Ensure no bindings for standalone functions
 
+def test_get_by_event():
+    relay_instance = DummyRelay()
+
+    # Creating some bindings
+    listener_binding = Listener(method=relay_instance.listener_method, 
+                                channel="channelA", event_type="eventX")
+    emitter_binding = Emitter(method=relay_instance.listener_method, 
+                              channel="channelA", event_type="eventY")
+
+    # Adding bindings
+    Bindings.add(listener_binding)
+    Bindings.add(emitter_binding)
+
+    # Retrieving by channel and event type
+    bindings = Bindings.get_by_event("channelA", "eventX")
+    assert len(bindings) == 1
+    assert listener_binding in bindings
+
+    all_bindings = Bindings.get_by_event("channelA", "*")
+    assert len(all_bindings) == 2
+    assert listener_binding in all_bindings
+    assert emitter_binding in all_bindings
+
+    # Clean up for other tests
+    Bindings.remove(listener_binding)
+    Bindings.remove(emitter_binding)

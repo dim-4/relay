@@ -174,3 +174,7 @@ def type_check(value, type_hint:BaseModel|Any) -> bool:
 
     raise TypeError(f"Type '{type_hint}' is not supported.")
     # return False
+
+def matches_type(obj: Any, target_type: type) -> bool:
+    """Check if object is an instance of the target type or its subclasses."""
+    return isinstance(obj, target_type) or issubclass(type(obj), target_type)

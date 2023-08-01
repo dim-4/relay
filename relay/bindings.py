@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import Any, Callable, Optional, TYPE_CHECKING
 from .consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE
 from .event import Event, SourceInfo
+from .utils import matches_type
+
 
 if TYPE_CHECKING:
     from .relay import Relay
@@ -108,17 +110,39 @@ class Bindings:
                 cls.remove(binding)
     
     @classmethod
-    def get_by_event(cls, channel:str, event_type:str) -> list[Binding]:
+    def get_by_event(cls, 
+                     channel:str, 
+                     event_type:str,
+                     filter_:Binding|Listener|Emitter=Binding
+    ) -> list[Binding]:
         # should include wildcard channel and event_type
-        raise NotImplementedError
+        # Get the direct bindings from channel and event_type.
+        direct_bindings = cls._by_chnl_and_type.get(channel, {}).get(event_type, [])
+
+        # Incorporate wildcard retrieval if necessary.
+        wildcard_channel_bindings = cls._by_chnl_and_type.get('*', {}).get(event_type, [])
+        wildcard_event_bindings = cls._by_chnl_and_type.get(channel, {}).get('*', [])
+        wildcard_all_bindings = cls._by_chnl_and_type.get('*', {}).get('*', [])
+
+        all_bindings = (direct_bindings + wildcard_channel_bindings + 
+                        wildcard_event_bindings + wildcard_all_bindings)
+
+        # Filter based on the given filter.
+        return [b for b in all_bindings if matches_type(b, filter_)]
 
     @classmethod
-    def get_by_relay(cls, relay:'Relay') -> list[Binding]:
-        return cls._by_relay[relay]
+    def get_by_relay(cls, 
+                     relay:'Relay', 
+                     filter_:Binding|Listener|Emitter=Binding
+    ) -> list[Binding]:
+        return [b for b in cls._by_relay[relay] if matches_type(b, filter_)]
     
     @classmethod
-    def get_by_function(cls, func:Callable[..., Any]) -> list[Binding]:
-        return cls._by_function[func]
+    def get_by_function(cls, 
+                        func:Callable[..., Any],
+                        filter_:Binding|Listener|Emitter=Binding
+    ) -> list[Binding]:
+        return [b for b in cls._by_function[func] if matches_type(b, filter_)]
 
     @staticmethod
     def _get_binding_data(binding:Binding):
