@@ -27,9 +27,9 @@ class Emitter(Binding):
 
 class Bindings:
 
-    _by_chnl_and_type:dict[str, dict[str, list[Binding]]] = dd(lambda: dd(list))
-    _by_relay:dict['Relay', list[Binding]] = dd(list)
-    _by_function:dict[Callable[..., Any], list[Binding]] = dd(list)
+    _by_chnl_and_type:dd[str, dd[str, list[Binding]]] = dd(lambda: dd(list))
+    _by_relay:dd['Relay', list[Binding]] = dd(list)
+    _by_function:dd[Callable[..., Any], list[Binding]] = dd(list)
 
     @classmethod
     def add(cls, binding:Binding):
@@ -90,7 +90,6 @@ class Bindings:
                 del cls._by_function[func]
             except KeyError: pass
 
-        
     @classmethod
     def remove_relay(cls, relay:'Relay'):
         """ removes all bindings associated with the relay """
@@ -101,6 +100,18 @@ class Bindings:
             for binding in bindings_to_remove:
                 cls.remove(binding)
     
+    @classmethod
+    def get_by_event(cls, channel:str, event_type:str) -> list[Binding]:
+        # should include wildcard channel and event_type
+        raise NotImplementedError
+
+    @classmethod
+    def get_by_relay(cls, relay:'Relay') -> list[Binding]:
+        return cls._by_relay[relay]
+    
+    @classmethod
+    def get_by_function(cls, func:Callable[..., Any]) -> list[Binding]:
+        return cls._by_function[func]
 
     @staticmethod
     def _get_binding_data(binding:Binding):
