@@ -32,6 +32,13 @@ class Bindings:
     _by_function:dd[Callable[..., Any], list[Binding]] = dd(list)
 
     @classmethod
+    def clear(cls):
+        """ clears all bindings """
+        cls._by_chnl_and_type.clear()
+        cls._by_relay.clear()
+        cls._by_function.clear()
+
+    @classmethod
     def add(cls, binding:Binding):
         channel, event_type, func, instance = cls._get_binding_data(binding)
         
