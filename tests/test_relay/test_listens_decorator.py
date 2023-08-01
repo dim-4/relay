@@ -1,4 +1,4 @@
-""" testing @receives decorator inside the Relay class """
+""" testing @listens decorator inside the Relay class """
 import pytest
 
 from pydantic import BaseModel
@@ -8,17 +8,17 @@ from relay.relay import Relay
 MAGENTA = "\033[35m"; RESET = "\033[0m"
 
 
-def test_receives_without_event_parameter():
-    """ Test `receives` decorator's behavior without an 'event' parameter. """
+def test_listens_without_event_parameter():
+    """ Test `listens` decorator's behavior without an 'event' parameter. """
     with pytest.raises(TypeError):
-        @Relay.receives
+        @Relay.listens
         def some_function_without_event(param1: str):
             pass
 
-def test_receives_with_incorrect_event_type():
-    """ Test `receives` decorator handling of wrong 'event' type hint. """
+def test_listens_with_incorrect_event_type():
+    """ Test `listens` decorator handling of wrong 'event' type hint. """
     with pytest.raises(TypeError):
-        @Relay.receives
+        @Relay.listens
         def some_function_with_wrong_event_type(event:str):
             pass
 
@@ -29,17 +29,17 @@ class SomeModel(BaseModel):
 
 class DummyRelay(Relay):
 
-    @Relay.receives
+    @Relay.listens
     def some_method_with_event(self, event: Event[SomeModel]):
         return event.data.message
     
-    @Relay.receives
+    @Relay.listens
     def method_with_no_event_type(self, event:Event):
         return event.data
 
 
-def test_receives_data_validation():
-    """Test @receives decorator for event data type validation."""
+def test_listens_data_validation():
+    """Test @listens decorator for event data type validation."""
     relay_instance = DummyRelay()
 
     # valid because some_method_with_event expects an Event[SomeModel]
@@ -62,8 +62,8 @@ def test_receives_data_validation():
                           f"'{relay_instance.some_method_with_event.__name__}"
                           "(self, event:Event[T])'.")
 
-def test_receives_no_data_validation():
-    """Test @receives decorator when no type hint is provided for event."""
+def test_listens_no_data_validation():
+    """Test @listens decorator when no type hint is provided for event."""
     relay_instance = DummyRelay()
 
     # Test with a variety of data types since there's no specific 

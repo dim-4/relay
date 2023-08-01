@@ -23,7 +23,7 @@ def test_event_default_values():
 def test_event_with_source_info():
     """Test the initialization with a given SourceInfo."""
     data = {"message": "Hello!"}
-    source_info = SourceInfo(relay=None, func=None)
+    source_info = SourceInfo(relay=None, emitter=None)
     event = Event(data=data, source=source_info)
     assert event.source == source_info
 
@@ -34,14 +34,14 @@ def test_event_with_invalid_relay():
     """Test that an invalid relay is caught."""
     data = {"message": "Hello!"}
     with pytest.raises(ValueError):
-        source_info = SourceInfo(relay="Invalid Relay", func=None)
+        source_info = SourceInfo(relay="Invalid Relay", emitter=None)
         event = Event(data=data, source=source_info)
 
 def test_event_with_invalid_func():
     """Test that an invalid function is caught."""
     data = {"message": "Hello!"}
     with pytest.raises(ValueError):
-        source_info = SourceInfo(relay=None, func="Invalid Function")
+        source_info = SourceInfo(relay=None, emitter="Invalid Function")
         event = Event(data=data, source=source_info)
 
 def test_event_timestamp_generation():
@@ -107,7 +107,7 @@ def test_source_info_defaults():
     """Test default values of SourceInfo."""
     source_info = SourceInfo()
     assert source_info.relay is None
-    assert source_info.func is None
+    assert source_info.emitter is None
 
 def test_event_reproduction():
     """Test if two events with the same data are equal."""

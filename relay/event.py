@@ -14,7 +14,7 @@ else:
 
 class SourceInfo(BaseModel):
     relay: Optional["Relay"] = None
-    func: Optional[Callable] = None
+    emitter: Optional[Callable] = None
 
 
 T = TypeVar('T', bound=Any)

@@ -2,20 +2,59 @@ import inspect
 import functools
 from pydantic import BaseModel
 from typing import Any, get_args, get_origin
+from .bindings import Bindings
 from .event import Event
 from .utils import type_check, truncate
 
+# .....
+MAGENTA = '\033[35m'; RST = '\033[0m'
+# .....
+
 
 class Relay:
-
 
     class NoEmit(BaseModel):
         """ tells @emits wrapper not to emit the event, just return the data """
         data: Any
 
+    
+    @classmethod
+    def emits(cls, func):
+        """ TODO: docstring """
+        # 1. get the return type hint
+        signature = inspect.signature(func)
+        ret_annotation = signature.return_annotation
+
+        
+        # 2. Ensure an explicit return type is provided
+        if ret_annotation is inspect.Signature.empty:
+            raise TypeError(
+                f"The method '{func.__name__}' that is decorated by "
+                "@Relay.emits, must have an explicit return type "
+                "hint. For example, 'def method_name() -> str:'. If "
+                "the method does not return anything, use '-> None'. "
+                "If the method can return anything, use '-> typing.Any'.")
+
+        
+        @functools.wraps(func)  # preserve func metadata
+        def wrapper(self, *args, **kwargs):
+            result = func(self, *args, **kwargs)
+
+            # 3. Validate the actual return value against the type hint
+            if not isinstance(result, ret_annotation):
+                raise TypeError(
+                    f"Return value of '{func.__name__}' does not match its "
+                    f"type hint {ret_annotation}. Got {type(result)} instead.")
+        
+            # If the return type hint is `NoEmit`, don't emit the event
+            if isinstance(result, cls.NoEmit):
+                return result.data
+
+            return result
+
 
     @classmethod
-    def receives(cls, func):
+    def listens(cls, func):
         """
         Decorator that validates the data of an `Event` parameter passed 
         to the decorated method.
