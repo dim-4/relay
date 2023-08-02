@@ -51,7 +51,6 @@ class Relay:
 
             return result
 
-
     @classmethod
     def listens(cls, func):
         """

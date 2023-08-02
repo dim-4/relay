@@ -74,6 +74,22 @@ class Bindings:
 
     @classmethod
     def remove(cls, binding:Binding):
+        """
+        Remove a specified binding from internal tracking structures.
+        
+        This method cleans the binding references from `_by_chnl_and_type`,
+        `_by_relay`, and `_by_method`. Additionally, it handles cleanup 
+        of any empty nested dictionaries within these structures.
+
+        Parameters:
+        ----------
+        - `binding` (Binding): The binding instance to be removed.
+
+        Note:
+        ----
+        If a specified binding is not found, the method handles the removal 
+        gracefully and ensures that empty references are cleaned up.
+        """
         if binding is None:
             return
 
