@@ -1,10 +1,10 @@
 import inspect
 from collections import defaultdict as dd
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Any, Callable, Optional, TYPE_CHECKING
-from .consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE
+from .consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE, FORBIDDEN_CHARACTERS
 from .event import Event, SourceInfo
-from .utils import type_check
+from .utils import type_check, validate_forbidden_characters
 
 
 if TYPE_CHECKING:
@@ -17,6 +17,21 @@ class Binding(BaseModel):
     event_type:Optional[str] = DEFAULT_EVENT_TYPE
     channel:Optional[str] = DEFAULT_CHANNEL
 
+    @field_validator('channel', 'event_type', mode="before")
+    def check_forbidden_characters(cls, v:str) -> str:
+        """
+        Validate if the given value contains forbidden characters.
+        
+        Raises:
+        ------
+            ValueError: If forbidden characters are found in the value.
+            
+        Returns:
+        -------
+            The original value if no forbidden characters are found.
+        """
+        return validate_forbidden_characters(v, FORBIDDEN_CHARACTERS)
+    
 
 class Listener(Binding):
     """ TODO: docstring. use class level method for config """

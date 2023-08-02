@@ -1,7 +1,8 @@
 import pytest
 
-from relay.bindings import Listener, Emitter, SourceInfo
+from relay.bindings import Binding, Listener, Emitter, SourceInfo
 from relay.consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE
+from relay.event import FORBIDDEN_CHARACTERS
 
 # 1. Basic Instantiation
 
@@ -38,3 +39,19 @@ def test_listener_invalid_handler():
 def test_emission_invalid_emitter():
     with pytest.raises(ValueError):
         Emitter(method="not_a_callable")
+
+# 4. Forbidden Characters
+
+def test_forbidden_characters_in_bindings():
+    for char in FORBIDDEN_CHARACTERS:
+        with pytest.raises(ValueError, match=f"Forbidden character '{char}'"):
+            Listener(method=sample_func, channel=f"channel{char}")
+            
+        with pytest.raises(ValueError, match=f"Forbidden character '{char}'"):
+            Listener(method=sample_func, event_type=f"event{char}")
+            
+        with pytest.raises(ValueError, match=f"Forbidden character '{char}'"):
+            Emitter(method=sample_func, channel=f"channel{char}")
+            
+        with pytest.raises(ValueError, match=f"Forbidden character '{char}'"):
+            Emitter(method=sample_func, event_type=f"event{char}")

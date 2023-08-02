@@ -1,6 +1,6 @@
 import pytest
 
-from relay.event import Event, SourceInfo
+from relay.event import Event, SourceInfo, FORBIDDEN_CHARACTERS
 from relay.consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE
 
 
@@ -132,3 +132,12 @@ def test_event_string_representation():
     assert str(event) == (f"Event(data=['{long_data[0][:44]}...], "
                           f"channel='DEFAULT', event_type='DEFAULT', "
                           f"source=None, time={event.time})")
+
+def test_forbidden_characters_in_event():
+    for char in FORBIDDEN_CHARACTERS:
+        with pytest.raises(ValueError, match=f"Forbidden character '{char}'"):
+            Event(data="Sample Data", channel=f"channel{char}")
+            
+        with pytest.raises(ValueError, match=f"Forbidden character '{char}'"):
+            Event(data="Sample Data", event_type=f"event{char}")
+

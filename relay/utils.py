@@ -175,6 +175,21 @@ def type_check(value:Any, type_hint:BaseModel|Any) -> bool:
     raise TypeError(f"Type '{type_hint}' is not supported.")
     # return False
 
-# def matches_type(obj: Any, target_type: type) -> bool:
-#     """Check if object is an instance of the target type or its subclasses."""
-#     return isinstance(obj, target_type) or issubclass(type(obj), target_type)
+def validate_forbidden_characters(value: str, forbidden_chars:list[str]) -> str:
+    """
+    Validate if the given value contains forbidden characters.
+    
+    Raises:
+    ------
+        ValueError: If forbidden characters are found in the value.
+        
+    Returns:
+    -------
+        The original value if no forbidden characters are found.
+    """
+    for char in forbidden_chars:
+        if char in str(value):
+            raise ValueError(f"Forbidden character '{char}' in channel or "
+                             "event_type. Please avoid using any of the "
+                             f"following chars: {forbidden_chars}")
+    return value

@@ -1,10 +1,11 @@
 from __future__ import annotations
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from time import time
 from typing import (Any, Callable, Generic, NamedTuple, 
                     Optional, TYPE_CHECKING, TypeVar)
-from .consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE
-from .utils import truncate
+from .consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE, FORBIDDEN_CHARACTERS
+from .utils import truncate, validate_forbidden_characters
+
 
 if TYPE_CHECKING:
     from .relay import Relay
@@ -60,6 +61,21 @@ class Event(Generic[T], BaseModel):
     event_type: str = DEFAULT_EVENT_TYPE
     source: Optional[SourceInfo] = None
     time: float = Field(default_factory=time)
+
+    @field_validator('channel', 'event_type', mode="before")
+    def check_forbidden_characters(cls, v:str) -> str:
+        """
+        Validate if the given value contains forbidden characters.
+        
+        Raises:
+        ------
+            ValueError: If forbidden characters are found in the value.
+            
+        Returns:
+        -------
+            The original value if no forbidden characters are found.
+        """
+        return validate_forbidden_characters(v, FORBIDDEN_CHARACTERS)
 
     def __str__(self) -> str:
         """
