@@ -57,7 +57,6 @@ class Bindings:
 
     @classmethod
     def add(cls, binding:Binding):
-        # raise NotImplementedError("We are missing type checking before adding")
 
         channel, event_type, method, instance = cls._get_binding_data(binding)
         
@@ -168,7 +167,8 @@ class Bindings:
             """Check if `s` matches the given pattern."""
             segments = pattern.split('*')
             
-            # Check the first segment with startswith and the last segment with endswith for optimization
+            # Check the first segment with startswith and the last segment 
+            # with endswith for optimization
             if segments[0] and not s.startswith(segments[0]):
                 return False
             if segments[-1] and not s.endswith(segments[-1]):
@@ -176,7 +176,8 @@ class Bindings:
             
             start_idx = 0
             for segment in segments:
-                # Find the current segment in the string starting from the last found index
+                # Find the current segment in the string starting from the 
+                # last found index
                 idx = s.find(segment, start_idx)
                 if idx == -1:
                     return False
@@ -186,7 +187,8 @@ class Bindings:
             return True
 
         def _retrieve_by_event(channel, event_type):
-            # Base case: If both channel and event_type are specific (non-wildcards and without pattern)
+            # Base case: If both channel and event_type are specific
+            # (non-wildcards and without pattern)
             if '*' not in channel and '*' not in event_type:
                 return cls._by_chnl_and_type[channel][event_type]
             
@@ -209,8 +211,6 @@ class Bindings:
 
         # Filter based on the given filter.
         return [b for b in all_bindings if type_check(b, filter_)]
-
-
 
     @classmethod
     def get_by_relay(cls, 

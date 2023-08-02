@@ -3,7 +3,7 @@ from relay.bindings import Binding, Listener, Emitter, Bindings
 from relay.relay import Relay
 
 
-class DummyRelay:
+class DummyRelay(Relay):
     """ Mock Relay class for testing purposes """
 
     def listener_method(self, event):
@@ -87,7 +87,8 @@ def test_get_by_event():
     listener_binding3 = Listener(method=relay_instance.listener_method, 
                                  channel="channelA123", event_type="eventY")
     listener_binding4 = Listener(method=relay_instance.listener_method, 
-                                 channel="channelCabcXYZ123", event_type="eventZ")
+                                 channel="channelCabcXYZ123", 
+                                 event_type="eventZ")
 
     # Adding bindings
     Bindings.add(listener_binding1)
@@ -123,11 +124,6 @@ def test_get_by_event():
     assert len(complex_pattern_bindings) == 1
     assert listener_binding4 in complex_pattern_bindings
 
-    # Clean up for other tests
-    Bindings.remove(listener_binding1)
-    Bindings.remove(listener_binding2)
-    Bindings.remove(listener_binding3)
-    Bindings.remove(listener_binding4)
 
 def test_mixed_patterns():
     Bindings.clear()
@@ -191,12 +187,14 @@ def test_long_patterns():
     Bindings.clear()
     relay_instance = DummyRelay()
 
-    listener_binding = Listener(method=relay_instance.listener_method,
-                                channel="channelALongPatternHereABCAnotherPatternXYZ",
-                                event_type="eventXLongPatternHere")
+    listener_binding = Listener(
+        method=relay_instance.listener_method,
+        channel="channelALongPatternHereABCAnotherPatternXYZ",
+        event_type="eventXLongPatternHere")
     Bindings.add(listener_binding)
 
-    long_bindings = Bindings.get_by_event("channelA*Pattern*XYZ", "eventX*PatternHere")
+    long_bindings = Bindings.get_by_event("channelA*Pattern*XYZ", 
+                                          "eventX*PatternHere")
     assert len(long_bindings) == 1
     assert listener_binding in long_bindings
 
