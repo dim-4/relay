@@ -24,7 +24,6 @@ class Relay:
         # 1. get the return type hint
         signature = inspect.signature(func)
         ret_annotation = signature.return_annotation
-
         
         # 2. Ensure an explicit return type is provided
         if ret_annotation is inspect.Signature.empty:
@@ -59,6 +58,11 @@ class Relay:
         Decorator that validates the data of an `Event` parameter passed 
         to the decorated method.
 
+        1. Statically - Makes sure the decorated method has `event:Event[T]`
+        or `event:Event` as a parameter.
+        2. Dynamically - Validates the data of the received event against
+        the type hint in the method signature.
+
         The `@receives` decorator is intended for methods that have a 
         parameter named 'event', which should be an instance of the 
         `Event` class. This decorator will validate the data contained 
@@ -67,7 +71,7 @@ class Relay:
         The schema or type is inferred from the type hint of the 'event' 
         parameter. For instance, if the method signature is 
         `def method_name(event: Event[SomeModel])` or `Event[int|str]` or 
-        `Event[Union[str, int]]`, the data inside `event` will be 
+        `Event[Union[str, int]]`, etc. the data inside `event` will be 
         validated against the respective type hint.
 
         If the `event` parameter's type hint doesn't include a specific 
@@ -104,8 +108,8 @@ class Relay:
 
             @receives
             def some_other_method(self, event: Event):
-                # NOTE: event.data will not be validated
-                # some other logic here
+                # NOTE: same as Event[Any] - event.data will not be validated
+                # some logic here
         ```
 
         Note:

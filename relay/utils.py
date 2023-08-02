@@ -1,7 +1,7 @@
 from collections import abc
 from pydantic import BaseModel, ValidationError
 from types import UnionType
-from typing import Any, Callable, get_args, get_origin, Literal, Union
+from typing import Any, Callable, get_args, get_origin, Literal, Union, TypeVar
 
 
 def truncate(data:Any, length:int=20) -> str:
@@ -193,3 +193,77 @@ def validate_forbidden_characters(value: str, forbidden_chars:list[str]) -> str:
                              "event_type. Please avoid using any of the "
                              f"following chars: {forbidden_chars}")
     return value
+
+
+def type_hint_compatible(type_hint_1: Any, type_hint_2: Any) -> bool:
+    """
+    Determines if two type hints are compatible with each other.
+    
+    This function checks if values with a type corresponding to `type_hint_1` 
+    could also be valid values for `type_hint_2` and vice versa. The function 
+    is especially handy for checking compatibility across complex, nested, and 
+    union types, as well as Pydantic`BaseModel` subclasses and user-defined 
+    classes.
+    
+    Parameters:
+    ----------
+    - ``type_hint_1`` (Any): The first type hint.
+    - ``type_hint_2`` (Any): The second type hint.
+    
+    Returns:
+    ----------
+    - `bool`: True if the type hints are compatible, otherwise False.
+
+    Examples:
+    ----------
+    Basic types:
+    ```python
+    assert type_hint_compatible(int, int)  # True
+    assert type_hint_compatible(int, str)  # False
+    assert type_hint_compatible(int, int|str)  # True
+    ```
+
+    Nested types:
+    ```python
+    assert type_hint_compatible(list[int], list)  # True
+    assert type_hint_compatible(dict[str, int], Dict)  # True
+    ```
+
+    Pydantic BaseModel subclasses:
+    ```python
+    class Person(BaseModel):
+        name: str
+        age: int
+    
+    class Employee(Person):
+        role: str
+    
+    class Student(Person):
+        school: str
+    
+    class Animal(BaseModel):
+        species: str
+    
+    assert type_hint_compatible(Person, Employee)  # True
+    assert type_hint_compatible(Employee, Person)  # True
+    assert type_hint_compatible(Employee, Student)  # False
+    assert type_hint_compatible(Employee, Animal)  # False
+    ```
+
+    User-defined classes:
+    ```python
+    class Building:
+        pass
+    
+    class School(Building):
+        pass
+    
+    assert type_hint_compatible(Building, School)  # True
+    ```
+
+    Note: For the purposes of this function, the compatibility does not 
+    guarantee substitutability in all contexts. For instance, while an 
+    `Employee` can be viewed as a `Person`, not all `Person` objects would 
+    necessarily have the attributes of an `Employee` (ex: Student).
+    """
+    raise NotImplementedError("This function is not yet implemented.")
