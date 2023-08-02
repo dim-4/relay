@@ -127,6 +127,7 @@ def test_error_cases():
     assert (str(e.value) == "Callable type hints with parameters "
             "(ex: Callable[[int, str], bool]) are not supported yet.")
 
+# Test for non BaseClass objects
 class Base:
     pass
 

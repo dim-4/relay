@@ -111,25 +111,131 @@ class Bindings:
             for binding in bindings_to_remove:
                 cls.remove(binding)
     
+    # @classmethod
+    # def get_by_event(cls, 
+    #                 channel:str, 
+    #                 event_type:str,
+    #                 filter_:Binding|Listener|Emitter=Binding
+    # ) -> list[Binding]:
+
+    #     def _matches_pattern(s: str, pattern: str) -> bool:
+    #         """Check if `s` matches the given pattern."""
+    #         if '*' in pattern:
+    #             start, _, end = pattern.partition('*')
+    #             return s.startswith(start) and s.endswith(end)
+    #         return s == pattern
+
+    #     def _retrieve_by_event(channel, event_type):
+    #         # Base case: If both channel and event_type are specific (non-wildcards and without pattern)
+    #         if '*' not in channel and '*' not in event_type:
+    #             return cls._by_chnl_and_type[channel][event_type]
+            
+    #         bindings = []
+
+    #         # If the channel has a wildcard or pattern
+    #         if '*' in channel:
+    #             for ch in cls._by_chnl_and_type.keys():
+    #                 if _matches_pattern(ch, channel):
+    #                     bindings.extend(_retrieve_by_event(ch, event_type))
+    #         # If the event_type has a wildcard or pattern
+    #         elif '*' in event_type:
+    #             for et in cls._by_chnl_and_type[channel].keys():
+    #                 if _matches_pattern(et, event_type):
+    #                     bindings.extend(_retrieve_by_event(channel, et))
+            
+    #         return bindings
+
+    #     all_bindings = _retrieve_by_event(channel, event_type)
+
+    #     # Filter based on the given filter.
+    #     return [b for b in all_bindings if type_check(b, filter_)]
+
+
     @classmethod
     def get_by_event(cls, 
-                     channel:str, 
-                     event_type:str,
-                     filter_:Binding|Listener|Emitter=Binding
+                    channel:str, 
+                    event_type:str,
+                    filter_:Binding|Listener|Emitter=Binding
     ) -> list[Binding]:
-        # Get the direct bindings from channel and event_type.
-        direct_bindings = cls._by_chnl_and_type[channel][event_type]
+        """
+        Retrieve bindings based on `channel` and `event_type` patterns.
+        
+        This method supports wildcard patterns in the `channel` and `event_type`
+        arguments.
+        The wildcard `'*'` can be used to represent zero or more characters.
 
-        # Incorporate wildcard retrieval if necessary.
-        wildcard_channel_bindings = cls._by_chnl_and_type['*'][event_type]
-        wildcard_event_bindings = cls._by_chnl_and_type[channel]['*']
-        wildcard_all_bindings = cls._by_chnl_and_type['*']['*']
+        Examples:
+        --------
+            - `"channelA*"`: Matches any channel that starts with `"channelA"`.
+            - `"*eventX"`: Matches any event type that ends with `"eventX"`.
+            - `"ABC*def*xyz*123*"`: Matches channels that start with `"ABC"` and 
+            contain the sequence `"def"`, `"xyz"`, `"123"`.
 
-        all_bindings = (direct_bindings + wildcard_channel_bindings + 
-                        wildcard_event_bindings + wildcard_all_bindings)
+        Parameters:
+        ----------
+        - `channel` (str): The channel pattern to search.
+        - `event_type` (str): The event type pattern to search.
+        - `filter_` (Union[`Binding`, `Listener`, `Emitter`], optional): Filter 
+        the results based on a particular binding type. Default is `Binding`.
+        NOTE that `Listener` and `Emitter` are subclasses of `Binding`.
+
+        Returns:
+        -------
+        - `list[Binding]`: A list of bindings that match the given patterns.
+
+        Raises:
+        ------
+        - `TypeError`: If the provided filter_ doesn't match any of the
+        expected types.
+        """
+
+        def _matches_pattern(s: str, pattern: str) -> bool:
+            """Check if `s` matches the given pattern."""
+            segments = pattern.split('*')
+            
+            # Check the first segment with startswith and the last segment with endswith for optimization
+            if segments[0] and not s.startswith(segments[0]):
+                return False
+            if segments[-1] and not s.endswith(segments[-1]):
+                return False
+            
+            start_idx = 0
+            for segment in segments:
+                # Find the current segment in the string starting from the last found index
+                idx = s.find(segment, start_idx)
+                if idx == -1:
+                    return False
+                # Move the pointer beyond the current found segment
+                start_idx = idx + len(segment)
+            
+            return True
+
+        def _retrieve_by_event(channel, event_type):
+            # Base case: If both channel and event_type are specific (non-wildcards and without pattern)
+            if '*' not in channel and '*' not in event_type:
+                return cls._by_chnl_and_type[channel][event_type]
+            
+            bindings = []
+
+            # If the channel has a wildcard or pattern
+            if '*' in channel:
+                for ch in cls._by_chnl_and_type.keys():
+                    if _matches_pattern(ch, channel):
+                        bindings.extend(_retrieve_by_event(ch, event_type))
+            # If the event_type has a wildcard or pattern
+            elif '*' in event_type:
+                for et in cls._by_chnl_and_type[channel].keys():
+                    if _matches_pattern(et, event_type):
+                        bindings.extend(_retrieve_by_event(channel, et))
+            
+            return bindings
+
+        all_bindings = _retrieve_by_event(channel, event_type)
 
         # Filter based on the given filter.
         return [b for b in all_bindings if type_check(b, filter_)]
+
+
 
     @classmethod
     def get_by_relay(cls, 
