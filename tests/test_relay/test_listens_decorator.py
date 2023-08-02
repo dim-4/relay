@@ -80,3 +80,17 @@ def test_listens_no_data_validation():
     for data in test_data:
         event = Event(data=data)
         assert relay_instance.method_with_no_event_type(event) == data
+
+def test_listens_outside_relay():
+    """ Test `listens` decorator's behavior when used outside of `Relay` 
+        derived classes. 
+    """
+    class NotARelay:
+        @Relay.listens
+        def some_method(self, event: Event[SomeModel]):
+            return event.data.message
+
+    instance = NotARelay()
+
+    with pytest.raises(TypeError):
+        instance.some_method(Event(data=SomeModel(message="Test")))

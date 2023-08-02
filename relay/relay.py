@@ -37,6 +37,13 @@ class Relay:
         
         @functools.wraps(func)  # preserve func metadata
         def wrapper(self, *args, **kwargs):
+            # make sure that self is an instance of Relay or its children
+            if not isinstance(self, Relay):
+                raise TypeError(
+                    f"The method '{func.__name__}' that is decorated by "
+                    "@Relay.emits, must be a method of a class that "
+                    "inherits from Relay.")
+
             result = func(self, *args, **kwargs)
 
             # 3. Validate the actual return value against the type hint
@@ -113,7 +120,9 @@ class Relay:
 
         Note:
         ----
-        - The decorated method must have an 'event' parameter, and the type hint
+        - The decorated method must belong to a class that either is or 
+        inherits from `Relay`.
+        - The decorated method must have an 'event' parameter, and the type hint 
         for this parameter should be `Event` with an appropriate type or schema.
         """
         params = inspect.signature(func).parameters
@@ -138,6 +147,13 @@ class Relay:
         
         @functools.wraps(func)  # preserve func metadata
         def wrapper(self, event: Event[Any], *args, **kwargs):
+            # make sure that self is an instance of Relay or its children
+            if not isinstance(self, Relay):
+                raise TypeError(
+                    f"The method '{func.__name__}' that is decorated by "
+                    "@Relay.receives, must be a method of a class that "
+                    "inherits from Relay.")
+
             if not type_check(event.data, event_schema):
                 data_truncated = truncate(event.data, 50)
                 raise TypeError(f"Event data: -> {data_truncated} <- "

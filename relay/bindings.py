@@ -57,7 +57,27 @@ class Bindings:
 
     @classmethod
     def add(cls, binding:Binding):
+        """
+        Register a new event binding.
 
+        This method stores the provided `binding` in internal tracking
+        structures. 
+        If the binding already exists, it is ignored. 
+
+        Parameters:
+        ----------
+        - `binding` (Binding): The event binding instance to add.
+        (`Listener` or `Emitter`)
+
+        Note:
+        ----
+        Future iterations may introduce static type compatibility checks against
+        other methods that this event channel is associated with. As of now, 
+        dynamic type checking will be done when the event is emitted (against 
+        emitter return type) and received (against expected Event type hint).
+        These checks will only be done via `@Relay.emits` and `@Relay.receives`
+        decorators inside `Relay` child classes.
+        """
         channel, event_type, method, instance = cls._get_binding_data(binding)
         
         b_chnl_and_type = cls._by_chnl_and_type[channel]
