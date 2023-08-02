@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Any, Callable, Optional, TYPE_CHECKING
 from .consts import DEFAULT_CHANNEL, DEFAULT_EVENT_TYPE
 from .event import Event, SourceInfo
-from .utils import matches_type
+from .utils import type_check
 
 
 if TYPE_CHECKING:
@@ -12,37 +12,39 @@ if TYPE_CHECKING:
 
 
 class Binding(BaseModel):
-    """Base class for event bindings."""
+    """ Base class for event bindings. """
     method:Callable[..., Any] = ...
     event_type:Optional[str] = DEFAULT_EVENT_TYPE
     channel:Optional[str] = DEFAULT_CHANNEL
 
 
 class Listener(Binding):
-    """ TODO: docstring. use class level func for config """
+    """ TODO: docstring. use class level method for config """
     source:Optional[SourceInfo] = None
 
 
 class Emitter(Binding):
-    """ TODO: docstring. use class level func for config """
+    """ TODO: docstring. use class level method for config """
 
 
 class Bindings:
 
     _by_chnl_and_type:dd[str, dd[str, list[Binding]]] = dd(lambda: dd(list))
     _by_relay:dd['Relay', list[Binding]] = dd(list)
-    _by_function:dd[Callable[..., Any], list[Binding]] = dd(list)
+    _by_method:dd[Callable[..., Any], list[Binding]] = dd(list)
 
     @classmethod
     def clear(cls):
         """ clears all bindings """
         cls._by_chnl_and_type.clear()
         cls._by_relay.clear()
-        cls._by_function.clear()
+        cls._by_method.clear()
 
     @classmethod
     def add(cls, binding:Binding):
-        channel, event_type, func, instance = cls._get_binding_data(binding)
+        # raise NotImplementedError("We are missing type checking before adding")
+
+        channel, event_type, method, instance = cls._get_binding_data(binding)
         
         b_chnl_and_type = cls._by_chnl_and_type[channel]
         if binding not in b_chnl_and_type[event_type]:
@@ -52,7 +54,7 @@ class Bindings:
         if binding not in b_relay:
             b_relay.append(binding)
         
-        b_func = cls._by_function[func]
+        b_func = cls._by_method[method]
         if binding not in b_func:
             b_func.append(binding)
 
@@ -90,13 +92,13 @@ class Bindings:
             except KeyError: pass
 
         # Working with _by_function
-        if binding in cls._by_function.get(func, []):
-            cls._by_function[func].remove(binding)
+        if binding in cls._by_method.get(func, []):
+            cls._by_method[func].remove(binding)
             
         # Removing empty function
-        if not cls._by_function.get(func):
+        if not cls._by_method.get(func):
             try:
-                del cls._by_function[func]
+                del cls._by_method[func]
             except KeyError: pass
 
     @classmethod
@@ -115,34 +117,33 @@ class Bindings:
                      event_type:str,
                      filter_:Binding|Listener|Emitter=Binding
     ) -> list[Binding]:
-        raise NotImplementedError
-        # # Get the direct bindings from channel and event_type.
-        # direct_bindings = cls._by_chnl_and_type[channel][event_type]
+        # Get the direct bindings from channel and event_type.
+        direct_bindings = cls._by_chnl_and_type[channel][event_type]
 
-        # # Incorporate wildcard retrieval if necessary.
-        # wildcard_channel_bindings = cls._by_chnl_and_type['*'][event_type]
-        # wildcard_event_bindings = cls._by_chnl_and_type[channel]['*']
-        # wildcard_all_bindings = cls._by_chnl_and_type['*']['*']
+        # Incorporate wildcard retrieval if necessary.
+        wildcard_channel_bindings = cls._by_chnl_and_type['*'][event_type]
+        wildcard_event_bindings = cls._by_chnl_and_type[channel]['*']
+        wildcard_all_bindings = cls._by_chnl_and_type['*']['*']
 
-        # all_bindings = (direct_bindings + wildcard_channel_bindings + 
-        #                 wildcard_event_bindings + wildcard_all_bindings)
+        all_bindings = (direct_bindings + wildcard_channel_bindings + 
+                        wildcard_event_bindings + wildcard_all_bindings)
 
-        # # Filter based on the given filter.
-        # return [b for b in all_bindings if matches_type(b, filter_)]
+        # Filter based on the given filter.
+        return [b for b in all_bindings if type_check(b, filter_)]
 
     @classmethod
     def get_by_relay(cls, 
                      relay:'Relay', 
                      filter_:Binding|Listener|Emitter=Binding
     ) -> list[Binding]:
-        return [b for b in cls._by_relay[relay] if matches_type(b, filter_)]
+        return [b for b in cls._by_relay[relay] if type_check(b, filter_)]
     
     @classmethod
-    def get_by_function(cls, 
-                        func:Callable[..., Any],
-                        filter_:Binding|Listener|Emitter=Binding
+    def get_by_method(cls, 
+                      func:Callable[..., Any],
+                      filter_:Binding|Listener|Emitter=Binding
     ) -> list[Binding]:
-        return [b for b in cls._by_function[func] if matches_type(b, filter_)]
+        return [b for b in cls._by_method[func] if type_check(b, filter_)]
 
     @staticmethod
     def _get_binding_data(binding:Binding):

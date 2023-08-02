@@ -42,7 +42,7 @@ def test_get_by_relay():
     Bindings.remove(emitter_binding)
 
 
-def test_get_by_function():
+def test_get_by_method():
     Bindings.clear()
     relay_instance = DummyRelay()
 
@@ -54,12 +54,12 @@ def test_get_by_function():
     Bindings.add(listener_binding)
     Bindings.add(class_binding)
 
-    # Retrieving by function
-    instance_bindings = Bindings.get_by_function(relay_instance.listener_method)
+    # Retrieving by method
+    instance_bindings = Bindings.get_by_method(relay_instance.listener_method)
     assert len(instance_bindings) == 1
     assert listener_binding in instance_bindings
 
-    class_bindings = Bindings.get_by_function(DummyRelay.class_listener_method)
+    class_bindings = Bindings.get_by_method(DummyRelay.class_listener_method)
     assert len(class_bindings) == 1
     assert class_binding in class_bindings
 
@@ -68,14 +68,14 @@ def test_get_by_function():
     Bindings.remove(class_binding)
 
 
-def test_get_by_function_no_bindings():
+def test_get_by_method_no_bindings():
     Bindings.clear()
-    bindings = Bindings.get_by_function(standalone_function)
-    assert len(bindings) == 0  # Ensure no bindings for standalone functions
+    bindings = Bindings.get_by_method(standalone_function)
+    assert len(bindings) == 0  # Ensure no bindings for standalone methods
 
 
 # TODO: think about these things before. Especially, the WILDCARD parts
-
+# THINK ABOUT PARTIAL EVENTS TOO: event_type = "some*"
 
 # def test_get_by_event():
 #     Bindings.clear()

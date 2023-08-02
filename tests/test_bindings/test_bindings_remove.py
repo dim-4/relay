@@ -38,20 +38,20 @@ def test_bindings_clear():
     
     assert Bindings._by_chnl_and_type
     assert Bindings._by_relay
-    assert Bindings._by_function
+    assert Bindings._by_method
     
     Bindings.clear()
     
     assert not Bindings._by_chnl_and_type
     assert not Bindings._by_relay
-    assert not Bindings._by_function
+    assert not Bindings._by_method
 
 
 def test_remove_binding(binding, dummy_relay):
     Bindings.clear()
     Bindings.add(binding)
     Bindings.remove(binding)
-    assert binding not in Bindings._by_function[dummy_relay.listener_method]
+    assert binding not in Bindings._by_method[dummy_relay.listener_method]
     assert binding not in Bindings._by_relay[dummy_relay]
     assert binding not in Bindings._by_chnl_and_type[binding.channel][binding.event_type]
 
@@ -62,7 +62,7 @@ def test_remove_binding_with_relay(dummy_relay):
     Bindings.add(binding)
     Bindings.remove_relay(dummy_relay)
     assert dummy_relay not in Bindings._by_relay
-    assert binding not in Bindings._by_function[dummy_relay.listener_method]
+    assert binding not in Bindings._by_method[dummy_relay.listener_method]
     assert binding not in Bindings._by_chnl_and_type[binding.channel][binding.event_type]
 
 
@@ -71,7 +71,7 @@ def test_remove_classmethod_binding():
     binding = Binding(method=DummyRelay.class_listener_method)
     Bindings.add(binding)
     Bindings.remove(binding)
-    assert binding not in Bindings._by_function[DummyRelay.class_listener_method]
+    assert binding not in Bindings._by_method[DummyRelay.class_listener_method]
     # for classmethods, the 'instance' is the class itself
     assert binding not in Bindings._by_relay[DummyRelay]
     assert binding not in Bindings._by_chnl_and_type[binding.channel][binding.event_type]
@@ -89,7 +89,7 @@ def test_remove_from_empty_binding_collection(binding):
 def test_remove_nonexistent_binding(binding, dummy_relay):
     Bindings.clear()
     Bindings.remove(binding)  # this should not raise an error even though the binding was not added
-    assert binding not in Bindings._by_function[dummy_relay.listener_method]
+    assert binding not in Bindings._by_method[dummy_relay.listener_method]
     assert binding not in Bindings._by_relay[dummy_relay]
     assert binding not in Bindings._by_chnl_and_type[binding.channel][binding.event_type]
 
@@ -120,7 +120,7 @@ def test_binding_count_after_adds_and_removes(dummy_relay):
     Bindings.remove(binding)
 
     # Depending on your desired behavior, the binding might still exist or not. Adjust the test accordingly.
-    assert binding not in Bindings._by_function[dummy_relay.listener_method]
+    assert binding not in Bindings._by_method[dummy_relay.listener_method]
 
 def test_remove_unbound_relay(dummy_relay):
     Bindings.clear()
@@ -142,7 +142,7 @@ def test_remove_function_after_removing_all_bindings(dummy_relay):
     Bindings.add(binding2)
     Bindings.remove(binding1)
     Bindings.remove(binding2)
-    assert dummy_relay.listener_method not in Bindings._by_function
+    assert dummy_relay.listener_method not in Bindings._by_method
 
 def test_add_remove_multiple_bindings_same_function_different_channels(dummy_relay):
     Bindings.clear()
@@ -164,8 +164,8 @@ def test_add_remove_multiple_bindings_different_functions(dummy_relay):
     Bindings.add(binding1)
     Bindings.add(binding2)
     Bindings.remove(binding1)
-    assert binding1 not in Bindings._by_function[dummy_relay.listener_method]
-    assert binding2 in Bindings._by_function[dummy_relay.another_listener]
+    assert binding1 not in Bindings._by_method[dummy_relay.listener_method]
+    assert binding2 in Bindings._by_method[dummy_relay.another_listener]
 
 def test_remove_relay_multiple_times(dummy_relay):
     Bindings.clear()
@@ -223,8 +223,8 @@ def test_add_remove_same_event_type_different_bindings(dummy_relay):
     Bindings.add(binding1)
     Bindings.add(binding2)
     Bindings.remove(binding1)
-    assert binding1 not in Bindings._by_function[dummy_relay.listener_method]
-    assert binding2 in Bindings._by_function[dummy_relay.another_listener]
+    assert binding1 not in Bindings._by_method[dummy_relay.listener_method]
+    assert binding2 in Bindings._by_method[dummy_relay.another_listener]
 
 def test_remove_binding_added_multiple_times(dummy_relay):
     Bindings.clear()
@@ -233,7 +233,7 @@ def test_remove_binding_added_multiple_times(dummy_relay):
     Bindings.add(binding)  # add again
     Bindings.remove(binding)
     Bindings.remove(binding)  # remove again, shouldn't raise an error
-    assert binding not in Bindings._by_function[dummy_relay.listener_method]
+    assert binding not in Bindings._by_method[dummy_relay.listener_method]
 
 def test_remove_channel_after_removing_all_bindings(dummy_relay):
     Bindings.clear()
@@ -271,7 +271,7 @@ def test_remove_function_after_all_bindings_removed(dummy_relay):
     Bindings.add(binding2)
     Bindings.remove(binding1)
     Bindings.remove(binding2)
-    assert dummy_relay.listener_method not in Bindings._by_function
+    assert dummy_relay.listener_method not in Bindings._by_method
 
 def test_remove_relay_after_all_bindings_removed(dummy_relay):
     """

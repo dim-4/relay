@@ -126,3 +126,48 @@ def test_error_cases():
         type_check(lambda x, y: x+y, Callable[[int, str], bool])
     assert (str(e.value) == "Callable type hints with parameters "
             "(ex: Callable[[int, str], bool]) are not supported yet.")
+
+class Base:
+    pass
+
+class Derived(Base):
+    pass
+
+class DerivedFromDerived(Derived):
+    pass
+
+class Unrelated:
+    pass
+
+
+def test_type_check_with_exact_match():
+    obj = Base()
+    assert type_check(obj, Base) == True
+
+def test_type_check_with_subclass():
+    obj = Derived()
+    assert type_check(obj, Base) == True
+
+def test_type_check_with_subclass_of_subclass():
+    obj = DerivedFromDerived()
+    assert type_check(obj, Base) == True
+    assert type_check(obj, Derived) == True
+    assert type_check(obj, DerivedFromDerived) == True
+
+def test_type_check_with_unrelated_class():
+    obj = Unrelated()
+    assert type_check(obj, Base) == False
+
+def test_type_check_with_exact_subclass():
+    obj = Derived()
+    assert type_check(obj, Derived) == True
+
+def test_type_check_with_base_as_subclass():
+    obj = Base()
+    assert type_check(obj, Derived) == False
+
+def test_type_check_with_non_class_objects():
+    num = 5
+    assert type_check(num, int) == True
+    assert type_check(num, float) == False
+    assert type_check(num, (int, float)) == True  # Checks

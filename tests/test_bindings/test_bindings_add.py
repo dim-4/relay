@@ -44,7 +44,7 @@ def test_add_binding():
     relay = DummyRelay()
     binding = Binding(method=relay.listener_method)
     Bindings.add(binding)
-    assert binding in Bindings._by_function[relay.listener_method]
+    assert binding in Bindings._by_method[relay.listener_method]
 
 def test_add_binding_from_outside():
     err_msg="Binding method must come from Relay."
@@ -54,7 +54,7 @@ def test_add_binding_from_outside():
 
 def test_add_listener(dummy_relay, listener_binding):
     Bindings.add(listener_binding)
-    assert listener_binding in Bindings._by_function[dummy_relay.listener_method]
+    assert listener_binding in Bindings._by_method[dummy_relay.listener_method]
     assert listener_binding in Bindings._by_relay[dummy_relay]
     
     chnl_type_dict = Bindings._by_chnl_and_type[listener_binding.channel]
@@ -62,7 +62,7 @@ def test_add_listener(dummy_relay, listener_binding):
 
 def test_add_emitter(dummy_relay, emitter_binding):
     Bindings.add(emitter_binding)
-    assert emitter_binding in Bindings._by_function[dummy_relay.listener_method]
+    assert emitter_binding in Bindings._by_method[dummy_relay.listener_method]
     assert emitter_binding in Bindings._by_relay[dummy_relay]
     
     chnl_type_dict = Bindings._by_chnl_and_type[emitter_binding.channel]
@@ -71,7 +71,7 @@ def test_add_emitter(dummy_relay, emitter_binding):
 def test_add_classmethod():
     binding = Binding(method=DummyRelay.class_listener_method)
     Bindings.add(binding)
-    assert binding in Bindings._by_function[DummyRelay.class_listener_method]
+    assert binding in Bindings._by_method[DummyRelay.class_listener_method]
     # instance becomes the class itself for classmethods
     assert binding in Bindings._by_relay[DummyRelay]  
     
@@ -92,8 +92,8 @@ def test_multiple_bindings_same_function(dummy_relay: DummyRelay):
     Bindings.add(binding2)
 
     # Check if both bindings are in the appropriate dictionaries
-    assert binding1 in Bindings._by_function[dummy_relay.listener_method]
-    assert binding2 in Bindings._by_function[dummy_relay.listener_method]
+    assert binding1 in Bindings._by_method[dummy_relay.listener_method]
+    assert binding2 in Bindings._by_method[dummy_relay.listener_method]
 
 @pytest.mark.skip(reason="Bindings can't check if method belongs to Relay")
 def test_add_classmethod_from_non_relay_class():

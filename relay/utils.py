@@ -35,7 +35,7 @@ def truncate(data:Any, length:int=20) -> str:
     else:
         return data_repr
 
-def type_check(value, type_hint:BaseModel|Any) -> bool:
+def type_check(value:Any, type_hint:BaseModel|Any) -> bool:
     """
     Checks if the given value matches the expected type hint.
 
@@ -175,6 +175,6 @@ def type_check(value, type_hint:BaseModel|Any) -> bool:
     raise TypeError(f"Type '{type_hint}' is not supported.")
     # return False
 
-def matches_type(obj: Any, target_type: type) -> bool:
-    """Check if object is an instance of the target type or its subclasses."""
-    return isinstance(obj, target_type) or issubclass(type(obj), target_type)
+# def matches_type(obj: Any, target_type: type) -> bool:
+#     """Check if object is an instance of the target type or its subclasses."""
+#     return isinstance(obj, target_type) or issubclass(type(obj), target_type)
