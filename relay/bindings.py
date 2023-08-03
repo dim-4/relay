@@ -19,7 +19,7 @@ class Binding(BaseModel):
     channel:Optional[str] = DEFAULT_CHANNEL
 
     @field_validator('channel', 'event_type', mode="before")
-    def check_forbidden_characters(cls, v:str) -> str:
+    def _check_forbidden_characters(cls, v:str) -> str:
         """
         Validate if the given value contains forbidden characters.
         
@@ -34,7 +34,7 @@ class Binding(BaseModel):
         return validate_forbidden_characters(v, FORBIDDEN_CHARACTERS)
     
     @field_validator('method', mode="after")
-    def check_async(cls, func:Callable[..., Any]) -> Callable[..., Any]:
+    def _check_async(cls, func:Callable[..., Any]) -> Callable[..., Any]:
         if not asyncio.iscoroutinefunction(func):
             raise TypeError(
                 f"The method must be asynchronous. Your method "
@@ -42,16 +42,140 @@ class Binding(BaseModel):
                 "supports asynchronous methods.")
         return func
 
+
 class Listener(Binding):
-    """ TODO: docstring. use class level method for config """
+    """
+    A derived class from `Binding` that represents an event listener.
+    
+    This class is used to manage and encapsulate the event listener 
+    configuration. It defines an event binding that listens to a 
+    specific event type on a channel. The bound method will be invoked 
+    when the event occurs.
+
+    Class Attributes:
+    ----------------
+    `source` (Optional[SourceInfo]): Represents the source of the event. 
+    It can be an instance of `SourceInfo`, used to provide additional 
+    information about the source of the event. Default is `None`.
+    
+    Inherited Class Attributes:
+    --------------------------
+    `method` (Callable[..., Any]): The asynchronous callback method to be 
+    invoked when the event occurs.
+
+    `event_type` (Optional[str]): The type of event to listen for. 
+    Default is the `DEFAULT_EVENT_TYPE`.
+
+    `channel` (Optional[str]): The channel that the event will occur on. 
+    Default is the `DEFAULT_CHANNEL`.
+
+    Note:
+    ----
+    The event listener is tied to the method provided and must be an 
+    asynchronous method. This is validated using the `check_async` 
+    method inherited from `Binding`.
+    """
+    # TODO: docstring. use class level method for config
     source:Optional[SourceInfo] = None
 
 
 class Emitter(Binding):
-    """ TODO: docstring. use class level method for config """
+    """
+    A class to represent event emission bindings.
+
+    This class inherits from `Binding` and is designed to represent 
+    configurations associated with emitting events. Events can be triggered 
+    from a specific source to target receivers listening for them.
+
+    Attributes:
+    ----------
+    method (Callable[..., Any]):
+        The asynchronous method associated with the emitter. This is the 
+        event generation mechanism. This method should be a coroutine.
+
+    event_type (Optional[str], default=DEFAULT_EVENT_TYPE):
+        The type of event being emitted. This helps in categorizing and 
+        routing the emitted event to appropriate listeners.
+
+    channel (Optional[str], default=DEFAULT_CHANNEL):
+        The channel through which the event is emitted. Different channels
+        may represent various logical groupings or pathways for events.
+
+    Note:
+    ----
+    Emitter configurations should ensure valid channel and event type names
+    by avoiding forbidden characters, and should only associate asynchronous
+    methods for event emission.
+
+    Examples:
+    --------
+    ```python
+    emitter_instance = Emitter(method=async_emit_method,
+                               event_type="custom_event",
+                               channel="custom_channel")
+    ```
+    """
+    # TODO: docstring. use class level method for config
 
 
 class Bindings:
+    """
+    A class used to manage event bindings in a structured manner.
+
+    This class contains static methods and properties that store the binding 
+    data and allow manipulation of the binding instances (`Listener` or 
+    `Emitter`). Each binding is registered under specific keys derived from 
+    the binding data, including:
+    1. Channel and Event type
+    2. Associated Relay instance
+    3. Method associated with the binding
+
+    All bindings are internally managed using three dictionaries:
+    `_by_chnl_and_type`, `_by_relay`, and `_by_method`, each representing 
+    bindings by channel and event type, by relay instance, and by associated 
+    method respectively. They contain same data indexed differently.
+
+    Class Attributes:
+    ----------------
+    `_by_chnl_and_type`: A nested defaultdict that maps a channel (str) to 
+    another defaultdict, which further maps an event type (str) to a list of 
+    Binding instances.
+
+    `_by_relay`: A defaultdict that maps a Relay instance to a list of Binding 
+    instances.
+
+    `_by_method`: A defaultdict that maps a method (Callable) to a list of 
+    Binding instances.
+
+    Methods:
+    -------
+    `clear() -> None:`
+        Clear all registered bindings.
+
+    `add(binding: Binding) -> None:`
+        Add a new binding to the tracking structures.
+
+    `remove(binding: Binding) -> None:`
+        Remove a specific binding from the tracking structures.
+
+    `remove_relay(relay: 'Relay') -> None:`
+        Remove all bindings associated with a specific relay instance.
+
+    `get_by_event(channel: str, event_type: str, filter_: Union[Binding, 
+    Listener, Emitter]) -> list[Binding]:`
+        Retrieve bindings based on channel and event_type patterns, optionally 
+        filtered by binding type.
+
+    `get_by_relay(relay: 'Relay', filter_: Union[Binding, Listener, Emitter])
+    -> list[Binding]:`
+        Retrieve bindings associated with a specific relay instance, 
+        optionally filtered by binding type.
+
+    `get_by_method(method: Callable[..., Any], filter_: Union[Binding, 
+    Listener, Emitter]) -> list[Binding]:`
+        Retrieve bindings associated with a specific method, 
+        optionally filtered by binding type.
+    """
 
     _by_chnl_and_type:dd[str, dd[str, list[Binding]]] = dd(lambda: dd(list))
     _by_relay:dd['Relay', list[Binding]] = dd(list)
