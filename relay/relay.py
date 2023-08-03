@@ -22,6 +22,20 @@ class Relay:
         """ tells @emits wrapper not to emit the event, just return the data """
         data: Any
 
+    def __init__(self, binding_config=None):
+        """ TODO: allow binding config initialization ...
+            Config should contain list of Emitter and Receiver bindings
+            that use methods inside the class in unbounded form
+            (If class contains self.foo(self), then config should contain
+            RelayInstance.foo which will then mapped to self.foo, or if it's
+            classmethod or staticmethod, then it may be mapped to the class,
+            but I'm not sure if we are allowing this.
+            So test this when you can.)
+        """
+        # TODO: code here ...
+        # ...
+
+
     @classmethod
     async def emit(cls, event:Event):
         """
