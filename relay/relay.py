@@ -9,7 +9,8 @@ from .event import Event, SourceInfo
 from .utils import type_check, truncate
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] [%(asctime)s] %(message)s',
+                    format=('[%(levelname)s] [%(asctime)s] '
+                            '[%(module)s:%(lineno)d] %(message)s'),
                     datefmt='%Y-%m-%d %H-%M-%S')
 logger = logging.getLogger(__name__)
 RED = "\033[1;31m"; MAGENTA = "\033[1;35m"; GREEN = "\033[1;32m"
@@ -24,6 +25,12 @@ class Relay:
     @classmethod
     async def emit(cls, event:Event):
         """
+        IMPORTANT:
+        ---------
+        You should `await` this method to ensure that the 
+        asynchronous tasks it spawns (for notifying listeners) are scheduled 
+        properly.
+
         Asynchronously emits a given event to all compatible listeners 
         registered with the `Bindings` class.
 
@@ -36,12 +43,6 @@ class Relay:
         raised by the listeners are caught and logged, ensuring that one 
         listener's exception will not halt the distribution of the event to 
         other listeners.
-
-        IMPORTANT:
-        ---------
-        You should `await` this method to ensure that the 
-        asynchronous tasks it spawns (for notifying listeners) are scheduled 
-        properly.
 
         Parameters:
         ----------
@@ -372,4 +373,3 @@ class Relay:
         - `binding (Binding)`: The binding to be removed. (Listener or Emitter)
         """
         Bindings.remove(binding)
-
