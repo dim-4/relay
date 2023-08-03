@@ -104,5 +104,7 @@ async def test_listens_on_sync_method():
             def sync_method(self, event: Event[SomeModel]):
                 return event.data.message
 
-    expected_error_msg = "The method 'sync_method' must be asynchronous. The '@listens' decorator can only be applied to async methods."
+    expected_error_msg = (
+        "The method 'sync_method' must be asynchronous. The "
+        "'@listens' decorator can only be applied to async methods.")
     assert str(exc_info.value) == expected_error_msg

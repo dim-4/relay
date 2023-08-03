@@ -3,8 +3,8 @@ import inspect
 import functools
 from pydantic import BaseModel
 from typing import Any, get_args, get_origin
-from .bindings import Bindings
-from .event import Event
+from .bindings import Bindings, Listener, Emitter
+from .event import Event, SourceInfo
 from .utils import type_check, truncate
 
 # .....
@@ -21,7 +21,55 @@ class Relay:
     @classmethod
     async def emit(cls, event: Event[Any]):
         """ TODO: docstring """
+        def source_compatible(s_event:SourceInfo, 
+                              s_listener:SourceInfo) -> bool:
+            """ returns True if event source if compatible with listener
+                source (that is, if listener is expecting an event only
+                from a specific source) 
+            """
+            listn_relay = None if s_listener is None else s_listener.relay
+            listn_emitter = None if s_listener is None else s_listener.emitter
+            event_relay = None if s_event is None else s_event.relay
+            event_emitter = None if s_event is None else s_event.emitter
 
+            if listn_relay != None and event_relay != listn_relay:
+                return False
+            if listn_emitter != None and event_emitter != listn_emitter:
+                return False
+            return True
+
+
+        listeners:list[Listener] = Bindings.get_by_event(event.channel, 
+                                                         event.event_type,
+                                                         filter_=Listener)
+        for listener in listeners:
+            if not source_compatible(event.source, listener.source):
+                continue
+            method = listener.method
+            
+
+            # if listener.source is not None and event.source is not None:
+            #     relay, emitter = listener.source.relay, listener.source.emitter
+            #     # if relay and relay is not 
+
+        # Emit the event to all listeners
+            # listeners = Bindings.get_by_method(method=func,
+            #                                    filter_=Listener)
+            # for listener in listeners:
+            #     # skip if listener source is given and it's not this emitter
+            #     if listener.source is not None:
+            #         if listener.source.relay is not None:
+            #             if listener.source.relay is not self:
+            #                 continue
+            #         if listener.source.emitter is not None:
+            #             if listener.source.emitter is not func:
+            #                 continue
+            #     # invoke the method
+            #     event = Event(data=result, 
+            #                   channel=listener.channel,
+            #                   event_type=listener.event_type,
+            #                   source=SourceInfo(relay=self, emitter=func))
+            #     listener.method(event)
     
     @classmethod
     def emits(cls, func):
@@ -71,9 +119,15 @@ class Relay:
                     f"{ret_annotation} hinted to the decorated method "
                     f"'{func.__name__}(self, ...)'.")
 
-            # Emit the event
+            # emit
+            emitters = Bindings.get_by_method(func, filter_=Emitter)
+            for emitter in emitters:
+                cls.emit(Event(data=result, channel=emitter.channel,
+                               event_type=emitter.event_type,
+                               source=SourceInfo(relay=self, emitter=func)))
+            
 
-
+            
             return result
 
     @classmethod

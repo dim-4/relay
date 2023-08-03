@@ -6,11 +6,11 @@ from relay.relay import Relay
 class DummyRelay(Relay):
     """ Mock Relay class for testing purposes """
 
-    def listener_method(self, event):
+    async def listener_method(self, event):
         pass
 
     @classmethod
-    def class_listener_method(cls, event):
+    async def class_listener_method(cls, event):
         pass
 
 def standalone_function(event):

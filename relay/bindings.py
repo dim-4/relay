@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 from collections import defaultdict as dd
 from pydantic import BaseModel, field_validator
@@ -32,6 +33,14 @@ class Binding(BaseModel):
         """
         return validate_forbidden_characters(v, FORBIDDEN_CHARACTERS)
     
+    @field_validator('method', mode="after")
+    def check_async(cls, func:Callable[..., Any]) -> Callable[..., Any]:
+        if not asyncio.iscoroutinefunction(func):
+            raise TypeError(
+                f"The method must be asynchronous. Your method "
+                f"'{func.__name__}' is synchronous. The Binding only "
+                "supports asynchronous methods.")
+        return func
 
 class Listener(Binding):
     """ TODO: docstring. use class level method for config """
@@ -257,10 +266,10 @@ class Bindings:
     
     @classmethod
     def get_by_method(cls, 
-                      func:Callable[..., Any],
+                      method:Callable[..., Any],
                       filter_:Binding|Listener|Emitter=Binding
     ) -> list[Binding]:
-        return [b for b in cls._by_method[func] if type_check(b, filter_)]
+        return [b for b in cls._by_method[method] if type_check(b, filter_)]
 
     @staticmethod
     def _get_binding_data(binding:Binding):

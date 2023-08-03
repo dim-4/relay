@@ -4,14 +4,14 @@ from relay.relay import Relay
 
 
 class DummyRelay(Relay):
-    def listener_method(self, *args, **kwargs):
+    async def listener_method(self, *args, **kwargs):
         pass
     
     @classmethod
-    def class_listener_method(cls, *args, **kwargs):
+    async def class_listener_method(cls, *args, **kwargs):
         pass
 
-    def another_listener(self, *args, **kwargs):
+    async def another_listener(self, *args, **kwargs):
         pass
 
 
@@ -177,7 +177,7 @@ def test_remove_relay_multiple_times(dummy_relay):
 
 def test_remove_unbound_function_binding():
     Bindings.clear()
-    def standalone_function(*args, **kwargs):
+    async def standalone_function(*args, **kwargs):
         pass
 
     binding = Binding(method=standalone_function)

@@ -1,30 +1,26 @@
 import pytest
+
+import asyncio
 from relay.bindings import Binding, Listener, Emitter, Bindings
 from relay.relay import Relay
 
 
 class DummyRelay(Relay):
-    def listener_method(self, *args, **kwargs):
+    async def listener_method(self, *args, **kwargs):
         pass
     
     @classmethod
-    def class_listener_method(cls, *args, **kwargs):
+    async def class_listener_method(cls, *args, **kwargs):
         pass
 
 
 class NonRelayClass:
     @classmethod
-    def class_method(cls, *args, **kwargs):
+    async def class_method(cls, *args, **kwargs):
         pass
-
-
-class CallableObject:
-    def __call__(self, *args, **kwargs):
-        pass
-
 
 # Function outside of class
-def dummy_function(*args, **kwargs):
+async def dummy_function(*args, **kwargs):
     pass
 
 @pytest.fixture
@@ -81,7 +77,7 @@ def test_add_classmethod():
 def test_add_invalid_method_raises_exception():
     err_msg="Binding method must come from Relay."
     with pytest.raises(ValueError, match=err_msg):
-        binding = Binding(method=print)
+        binding = Binding(method=asyncio.sleep)
         Bindings.add(binding)
 
 def test_multiple_bindings_same_function(dummy_relay: DummyRelay):
@@ -101,15 +97,6 @@ def test_add_classmethod_from_non_relay_class():
     with pytest.raises(ValueError, match=err_msg):
         binding = Binding(method=NonRelayClass.class_method)
         Bindings.add(binding)
-
-def test_add_callable_object_raises_exception():
-    callable_obj = CallableObject()
-    err_msg = "Binding method must come from Relay."
-    
-    with pytest.raises(ValueError, match=err_msg):
-        binding = Binding(method=callable_obj)
-        Bindings.add(binding)
-
 
 @pytest.mark.parametrize("channel,event_type", [
     ("channel_1", "event_1"),
