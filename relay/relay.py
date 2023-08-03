@@ -38,7 +38,6 @@ class Relay:
                 return False
             return True
 
-
         listeners:list[Listener] = Bindings.get_by_event(event.channel, 
                                                          event.event_type,
                                                          filter_=Listener)
@@ -46,34 +45,58 @@ class Relay:
             if not source_compatible(event.source, listener.source):
                 continue
             method = listener.method
-            
-
-            # if listener.source is not None and event.source is not None:
-            #     relay, emitter = listener.source.relay, listener.source.emitter
-            #     # if relay and relay is not 
-
-        # Emit the event to all listeners
-            # listeners = Bindings.get_by_method(method=func,
-            #                                    filter_=Listener)
-            # for listener in listeners:
-            #     # skip if listener source is given and it's not this emitter
-            #     if listener.source is not None:
-            #         if listener.source.relay is not None:
-            #             if listener.source.relay is not self:
-            #                 continue
-            #         if listener.source.emitter is not None:
-            #             if listener.source.emitter is not func:
-            #                 continue
-            #     # invoke the method
-            #     event = Event(data=result, 
-            #                   channel=listener.channel,
-            #                   event_type=listener.event_type,
-            #                   source=SourceInfo(relay=self, emitter=func))
-            #     listener.method(event)
+            await method(event)
     
     @classmethod
     def emits(cls, func):
-        """ TODO: docstring """
+        """
+        A class method decorator that allows methods within a `Relay` or its 
+        child class to emit events with data validation against the provided 
+        type hints. It ensures that methods are asynchronous and their return 
+        type matches the expected event's payload type.
+
+        This decorator performs two types of checks:
+        1. **Static Checks** - Checks that:
+            - a. The decorated method is asynchronous.
+            - b. The method has a return type hint.
+        2. **Dynamic Checks** - Checks that:
+            - a. The method belongs to a class inheriting from `Relay`.
+            - b. The actual returned data matches the type hint.
+
+        If a method returns an instance of `NoEmit`, the event emission is 
+        bypassed, and only the data contained within is returned.
+
+        Parameters:
+        ----------
+        - `func (Callable)`: The method to be decorated.
+
+        Returns:
+        -------
+        - `Callable`: The wrapped function that includes event emission logic.
+
+        Raises:
+        ------
+        - `TypeError`: If the method does not meet the criteria specified above.
+
+        Example:
+        --------
+        ```python
+        class CustomRelay(Relay):
+            
+            @emits
+            async def some_method(self, arg1) -> SomeDataType:
+                # some logic...
+                return some_data  # This data will be emitted as event payload
+        ```
+
+        Note:
+        ----
+        - The decorated method must belong to a class that either is or 
+        inherits from `Relay`.
+        - For conditional event emission, the method can return an instance 
+        of `NoEmit` to skip the emission but still validate the data type.
+        - Bindings to this method are found in `Bindings` class.
+        """
         # STATIC CHECK 
         # make sure that the decorated method is a coroutine
         if not asyncio.iscoroutinefunction(func):
@@ -108,27 +131,29 @@ class Relay:
             result = await func(self, *args, **kwargs)
 
             # If the return type hint is `NoEmit`, don't emit the event
-            if isinstance(result, cls.NoEmit):
-                return result.data
+            no_emit = isinstance(result, cls.NoEmit)
 
-            if not type_check(result, ret_annotation):
-                data_truncated = truncate(result, 50)
+            data = result.data if no_emit else result
+            if not type_check(data, ret_annotation):
+                data_truncated = truncate(data, 50)
                 raise TypeError(
                     f"Return value: -> {data_truncated} <- of type "
-                    f"{type(result)} does not match the inferred type "
+                    f"{type(data)} does not match the inferred type "
                     f"{ret_annotation} hinted to the decorated method "
                     f"'{func.__name__}(self, ...)'.")
-
+                    
+            if no_emit:
+                return result.data
+            
             # emit
             emitters = Bindings.get_by_method(func, filter_=Emitter)
             for emitter in emitters:
                 cls.emit(Event(data=result, channel=emitter.channel,
                                event_type=emitter.event_type,
                                source=SourceInfo(relay=self, emitter=func)))
-            
 
-            
             return result
+        return wrapper
 
     @classmethod
     def listens(cls, func):

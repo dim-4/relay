@@ -32,7 +32,7 @@ class House(Building):
 
 # Pytest for type_hint_compatible:
 # skip
-@pytest.mark.skip(reason="Not implemented yet.")
+@pytest.mark.skip(reason="Not implemented/used yet.")
 def test_type_hint_compatible():
     # Basic compatibility tests
     assert type_hint_compatible(int, int)

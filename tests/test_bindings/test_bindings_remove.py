@@ -181,7 +181,8 @@ def test_remove_unbound_function_binding():
         pass
 
     binding = Binding(method=standalone_function)
-    with pytest.raises(ValueError):  # expecting a value error as the function is not bound to Relay
+    # expecting a value error as the function is not bound to Relay
+    with pytest.raises(ValueError):  
         Bindings.remove(binding)
 
 def test_interleaved_add_remove_operations(dummy_relay):
