@@ -1,16 +1,19 @@
 import asyncio
 import inspect
 import functools
+import logging
 from pydantic import BaseModel
 from typing import Any, get_args, get_origin
-from .bindings import Bindings, Listener, Emitter
+from .bindings import Bindings, Listener, Emitter, Binding
 from .event import Event, SourceInfo
 from .utils import type_check, truncate
 
-# .....
-MAGENTA = '\033[35m'; RST = '\033[0m'
-# .....
-
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(levelname)s] [%(asctime)s] %(message)s',
+                    datefmt='%Y-%m-%d %H-%M-%S')
+logger = logging.getLogger(__name__)
+RED = "\033[1;31m"; MAGENTA = "\033[1;35m"; GREEN = "\033[1;32m"
+RST = "\033[0;0m"
 
 class Relay:
 
@@ -19,8 +22,57 @@ class Relay:
         data: Any
 
     @classmethod
-    async def emit(cls, event: Event[Any]):
-        """ TODO: docstring """
+    async def emit(cls, event:Event):
+        """
+        Asynchronously emits a given event to all compatible listeners 
+        registered with the `Bindings` class.
+
+        This method propagates the provided event to all the listener methods 
+        which are registered for the event's `channel` and `event_type`.
+        However, if some listeners expect events from a particular source,
+        the event source will be checked before delivering to them. 
+
+        Listeners will receive the event asynchronously, and any exceptions 
+        raised by the listeners are caught and logged, ensuring that one 
+        listener's exception will not halt the distribution of the event to 
+        other listeners.
+
+        IMPORTANT:
+        ---------
+        You should `await` this method to ensure that the 
+        asynchronous tasks it spawns (for notifying listeners) are scheduled 
+        properly.
+
+        Parameters:
+        ----------
+        - `event (Event[Any])`: The event instance containing the data to be 
+        emitted. This should include information like `channel`, `event_type`, 
+        and the source of the event optionally.
+
+        Usage:
+        -----
+        ```python
+        # Example to emit an event
+        event = Event(data="Hello, World!", 
+                      channel="greetings", 
+                      event_type="hello")
+        await Relay.emit(event)
+        ```
+
+        Note:
+        ----
+        - It's essential that the `Bindings` class has been populated with the 
+        necessary listeners for the event to be effectively delivered.
+        - If listeners have source restrictions specified, it's crucial that the 
+        `event` parameter contains accurate source information.
+        - For best practices, always `await` this method, even though not doing 
+        so might work in some scenarios.
+
+        Returns:
+        -------
+        None. However, side effects include calling all the compatible listener 
+        methods with the provided event.
+        """
         def source_compatible(s_event:SourceInfo, 
                               s_listener:SourceInfo) -> bool:
             """ returns True if event source if compatible with listener
@@ -38,14 +90,23 @@ class Relay:
                 return False
             return True
 
+        async def safe_method(event, method):
+            """ async call the bound method, catch any exceptions """
+            try:
+                result = await method(event)
+            except Exception as e:
+                logger.exception(f"{RED}Exception in executing emission: {e}. "
+                                 f"Event: <{event}>, Method: <{method}>{RST}")
+
         listeners:list[Listener] = Bindings.get_by_event(event.channel, 
                                                          event.event_type,
                                                          filter_=Listener)
+
         for listener in listeners:
             if not source_compatible(event.source, listener.source):
                 continue
             method = listener.method
-            await method(event)
+            asyncio.create_task(safe_method(event, method))
     
     @classmethod
     def emits(cls, func):
@@ -146,11 +207,14 @@ class Relay:
                 return result.data
             
             # emit
-            emitters = Bindings.get_by_method(func, filter_=Emitter)
+            method = getattr(self, func.__name__)
+            emitters = Bindings.get_by_method(method, filter_=Emitter)
+
             for emitter in emitters:
-                cls.emit(Event(data=result, channel=emitter.channel,
-                               event_type=emitter.event_type,
-                               source=SourceInfo(relay=self, emitter=func)))
+                await cls.emit(
+                    Event(data=result, channel=emitter.channel,
+                          event_type=emitter.event_type,
+                          source=SourceInfo(relay=self, emitter=method)))
 
             return result
         return wrapper
@@ -268,3 +332,44 @@ class Relay:
                     f"'{func.__name__}(self, event:Event[T])'.")
             return await func(self, event, *args, **kwargs)
         return wrapper
+    
+
+    # Binding methods - these methods are used to add/remove bindings
+
+    def remove_binding_relay(self):
+        """
+        Removes all bindings associated with a specific relay.
+
+        Parameters:
+        ----------
+        - `self (Relay)`: The relay whose bindings are to be removed.
+        """
+        Bindings.remove_relay(self)
+
+    @classmethod
+    def add_binding(cls, binding: Emitter | Listener):
+        """
+        Adds a binding to the `Bindings` class.
+
+        Parameters:
+        ----------
+        - `binding (Binding)`: The binding to be added. (Listener or Emitter)
+
+        Raises:
+        ------
+        - `ValueError`: If the binding's method does not belong to a class 
+        inheriting from `Relay`.
+        """
+        Bindings.add(binding)
+    
+    @classmethod
+    def remove_binding(cls, binding: Emitter | Listener):
+        """
+        Removes a binding from the `Bindings` class.
+
+        Parameters:
+        ----------
+        - `binding (Binding)`: The binding to be removed. (Listener or Emitter)
+        """
+        Bindings.remove(binding)
+

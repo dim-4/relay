@@ -108,3 +108,61 @@ async def test_listens_on_sync_method():
         "The method 'sync_method' must be asynchronous. The "
         "'@listens' decorator can only be applied to async methods.")
     assert str(exc_info.value) == expected_error_msg
+
+# more tests ...
+
+class DummyData(BaseModel):
+    content: str
+
+
+class DummyListenerRelay(Relay):
+
+    @Relay.listens
+    async def valid_listener(self, event: Event[DummyData]):
+        return event.data.content
+
+    @Relay.listens
+    async def invalid_data_listener(self, event: Event[str]):
+        return event.data
+
+    async def non_listener(self, event: Event[DummyData]):
+        return event.data.content
+
+
+async def test_listens_decorator_valid_data_type():
+    relay_instance = DummyListenerRelay()
+    event = Event(data=DummyData(content="Hello"))
+    content = await relay_instance.valid_listener(event)
+    assert content == "Hello"
+
+async def test_listens_decorator_invalid_data_type():
+    relay_instance = DummyListenerRelay()
+    event = Event(data=DummyData(content="Hello"))
+    with pytest.raises(TypeError):
+        await relay_instance.invalid_data_listener(event)
+
+async def test_listens_decorator_outside_relay():
+    class NotARelay:
+        @Relay.listens
+        async def some_listener(self, event: Event[DummyData]):
+            return event.data.content
+
+    instance = NotARelay()
+    event = Event(data=DummyData(content="Hello"))
+
+    with pytest.raises(TypeError):
+        await instance.some_listener(event)
+
+async def test_listens_decorator_on_sync_method():
+    with pytest.raises(TypeError, match="The method 'sync_method'") as exc_info:
+        class DummyRelaySync(Relay):
+            @Relay.listens
+            def sync_method(self, event: Event[DummyData]):
+                return event.data.content
+
+async def test_listens_decorator_without_event_parameter():
+    with pytest.raises(TypeError, match="The method") as exc_info:
+        class DummyRelayNoEvent(Relay):
+            @Relay.listens
+            async def method_without_event(self):
+                pass
