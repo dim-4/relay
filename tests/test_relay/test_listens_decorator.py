@@ -8,14 +8,14 @@ from relay.relay import Relay
 MAGENTA = "\033[35m"; RESET = "\033[0m"
 
 
-def test_listens_without_event_parameter():
+async def test_listens_without_event_parameter():
     """ Test `listens` decorator's behavior without an 'event' parameter. """
     with pytest.raises(TypeError):
         @Relay.listens
         def some_function_without_event(param1: str):
             pass
 
-def test_listens_with_incorrect_event_type():
+async def test_listens_with_incorrect_event_type():
     """ Test `listens` decorator handling of wrong 'event' type hint. """
     with pytest.raises(TypeError):
         @Relay.listens
@@ -30,29 +30,29 @@ class SomeModel(BaseModel):
 class DummyRelay(Relay):
 
     @Relay.listens
-    def some_method_with_event(self, event: Event[SomeModel]):
+    async def some_method_with_event(self, event: Event[SomeModel]):
         return event.data.message
     
     @Relay.listens
-    def method_with_no_event_type(self, event:Event):
+    async def method_with_no_event_type(self, event:Event):
         return event.data
+   
 
-
-def test_listens_data_validation():
+async def test_listens_data_validation():
     """Test @listens decorator for event data type validation."""
     relay_instance = DummyRelay()
 
     # valid because some_method_with_event expects an Event[SomeModel]
     valid_event = Event(data=SomeModel(message="Valid"))
-    assert relay_instance.some_method_with_event(valid_event) == "Valid"
+    assert await relay_instance.some_method_with_event(valid_event) == "Valid"
 
     # invalid because some_method_with_event expects an Event[SomeModel]
     invalid_event = Event(data={"not_a_message": "Invalid"})
     with pytest.raises(TypeError):
-        relay_instance.some_method_with_event(invalid_event)
+        await relay_instance.some_method_with_event(invalid_event)
     
     try:
-        relay_instance.some_method_with_event(invalid_event)
+        await relay_instance.some_method_with_event(invalid_event)
     except TypeError as e:
         print(f"{MAGENTA}{e}{RESET}")
         assert str(e) == (f"Event data: -> {invalid_event.data} <- "
@@ -62,7 +62,7 @@ def test_listens_data_validation():
                           f"'{relay_instance.some_method_with_event.__name__}"
                           "(self, event:Event[T])'.")
 
-def test_listens_no_data_validation():
+async def test_listens_no_data_validation():
     """Test @listens decorator when no type hint is provided for event."""
     relay_instance = DummyRelay()
 
@@ -79,18 +79,30 @@ def test_listens_no_data_validation():
     ]
     for data in test_data:
         event = Event(data=data)
-        assert relay_instance.method_with_no_event_type(event) == data
+        assert await relay_instance.method_with_no_event_type(event) == data
 
-def test_listens_outside_relay():
+async def test_listens_outside_relay():
     """ Test `listens` decorator's behavior when used outside of `Relay` 
         derived classes. 
     """
     class NotARelay:
         @Relay.listens
-        def some_method(self, event: Event[SomeModel]):
+        async def some_method(self, event: Event[SomeModel]):
             return event.data.message
 
     instance = NotARelay()
 
     with pytest.raises(TypeError):
-        instance.some_method(Event(data=SomeModel(message="Test")))
+        await instance.some_method(Event(data=SomeModel(message="Test")))
+
+async def test_listens_on_sync_method():
+    """ Test `listens` decorator's behavior when used on synchronous methods. """
+    
+    with pytest.raises(TypeError) as exc_info:
+        class DummyRelaySync(Relay):
+            @Relay.listens
+            def sync_method(self, event: Event[SomeModel]):
+                return event.data.message
+
+    expected_error_msg = "The method 'sync_method' must be asynchronous. The '@listens' decorator can only be applied to async methods."
+    assert str(exc_info.value) == expected_error_msg

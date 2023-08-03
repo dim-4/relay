@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import functools
 from pydantic import BaseModel
@@ -17,15 +18,26 @@ class Relay:
         """ tells @emits wrapper not to emit the event, just return the data """
         data: Any
 
+    @classmethod
+    async def emit(cls, event: Event[Any]):
+        """ TODO: docstring """
+
     
     @classmethod
     def emits(cls, func):
         """ TODO: docstring """
-        # 1. get the return type hint
+        # STATIC CHECK 
+        # make sure that the decorated method is a coroutine
+        if not asyncio.iscoroutinefunction(func):
+            raise TypeError(
+                f"The method '{func.__name__}' must be asynchronous. The "
+                f"'@emits' decorator can only be applied to async methods.")
+
+        # get the return type hint
         signature = inspect.signature(func)
         ret_annotation = signature.return_annotation
         
-        # 2. Ensure an explicit return type is provided
+        # Ensure an explicit return type is provided
         if ret_annotation is inspect.Signature.empty:
             raise TypeError(
                 f"The method '{func.__name__}' that is decorated by "
@@ -36,7 +48,8 @@ class Relay:
 
         
         @functools.wraps(func)  # preserve func metadata
-        def wrapper(self, *args, **kwargs):
+        async def wrapper(self, *args, **kwargs):
+            # DYNAMIC CHECK
             # make sure that self is an instance of Relay or its children
             if not isinstance(self, Relay):
                 raise TypeError(
@@ -44,17 +57,22 @@ class Relay:
                     "@Relay.emits, must be a method of a class that "
                     "inherits from Relay.")
 
-            result = func(self, *args, **kwargs)
+            result = await func(self, *args, **kwargs)
 
-            # 3. Validate the actual return value against the type hint
-            if not isinstance(result, ret_annotation):
-                raise TypeError(
-                    f"Return value of '{func.__name__}' does not match its "
-                    f"type hint {ret_annotation}. Got {type(result)} instead.")
-        
             # If the return type hint is `NoEmit`, don't emit the event
             if isinstance(result, cls.NoEmit):
                 return result.data
+
+            if not type_check(result, ret_annotation):
+                data_truncated = truncate(result, 50)
+                raise TypeError(
+                    f"Return value: -> {data_truncated} <- of type "
+                    f"{type(result)} does not match the inferred type "
+                    f"{ret_annotation} hinted to the decorated method "
+                    f"'{func.__name__}(self, ...)'.")
+
+            # Emit the event
+
 
             return result
 
@@ -125,6 +143,13 @@ class Relay:
         - The decorated method must have an 'event' parameter, and the type hint 
         for this parameter should be `Event` with an appropriate type or schema.
         """
+        # STATIC CHECK
+        # make sure that the decorated method is a coroutine
+        if not asyncio.iscoroutinefunction(func):
+            raise TypeError(
+                f"The method '{func.__name__}' must be asynchronous. The "
+                f"'@listens' decorator can only be applied to async methods.")
+
         params = inspect.signature(func).parameters
         if 'event' not in params:
             raise TypeError(f"The method '{func.__name__}' must have an 'event'"
@@ -146,7 +171,8 @@ class Relay:
             event_schema = event_args[0]
         
         @functools.wraps(func)  # preserve func metadata
-        def wrapper(self, event: Event[Any], *args, **kwargs):
+        async def wrapper(self, event: Event[Any], *args, **kwargs):
+            # DYNAMIC CHECK
             # make sure that self is an instance of Relay or its children
             if not isinstance(self, Relay):
                 raise TypeError(
@@ -156,10 +182,10 @@ class Relay:
 
             if not type_check(event.data, event_schema):
                 data_truncated = truncate(event.data, 50)
-                raise TypeError(f"Event data: -> {data_truncated} <- "
-                                f"of type {type(event.data)} does not "
-                                f"match the inferred type {event_schema} "
-                                "hinted to the decorated method "
-                                f"'{func.__name__}(self, event:Event[T])'.")
-            return func(self, event, *args, **kwargs)
+                raise TypeError(
+                    f"Event data: -> {data_truncated} <- of type "
+                    f"{type(event.data)} does not match the inferred type "
+                    f"{event_schema} hinted to the decorated method "
+                    f"'{func.__name__}(self, event:Event[T])'.")
+            return await func(self, event, *args, **kwargs)
         return wrapper
