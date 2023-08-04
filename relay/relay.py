@@ -13,8 +13,8 @@ logging.basicConfig(level=logging.DEBUG,
                             '[%(module)s:%(lineno)d] %(message)s'),
                     datefmt='%Y-%m-%d %H-%M-%S')
 logger = logging.getLogger(__name__)
-RED = "\033[1;31m"; MAGENTA = "\033[1;35m"; GREEN = "\033[1;32m"
-RST = "\033[0;0m"
+RED = "\033[1;31m"; RST = "\033[0;0m"
+
 
 class Relay:
 
@@ -22,19 +22,96 @@ class Relay:
         """ tells @emits wrapper not to emit the event, just return the data """
         data: Any
 
-    def __init__(self, binding_config=None):
+    def __init__(self, bindings_config:list[Binding]=None):
+        """
+        Initializes a Relay instance.
+
+        This constructor accepts `bindings_config` - a list of bindings that 
+        represent the relationship between an emitter method and a listener 
+        method. These methods don't have to be bound to an instance when passed 
+        to the constructor; they are automatically bound to the Relay instance.
+
+        Passing the configuration when creating the Relay instance allows 
+        you to set up complex event emitting and listening configurations 
+        without needing to manually bind each method.
+
+        The method raises `ValueError` if any of the provided bindings are 
+        of incorrect type.
+
+        Parameters:
+        ----------
+        - `bindings_config` (`list[Binding]`, optional): A list of bindings 
+        defining the `Relay` instance's behavior. Each binding consists of a 
+        method and its channel and event type. It can either be an `Emitter` 
+        or `Listener` instance. Default is None which means no bindings.
+
+        Usage:
+        -----
+        ```python
+        class SampleRelay(Relay):
+            @Relay.listens
+            def listener(self, event: Event): ...
+
+            @Relay.emits
+            def emitter(self) -> Event: ...
+
+        # Create bindings
+        emitter_binding = Emitter(
+            method=SampleRelay.emitter, 
+            channel="channel1", 
+            event_type="event1"
+        )
+        listener_binding = Listener(
+            method=SampleRelay.listener, 
+            channel="channel1", 
+            event_type="event1"
+        )
+
+        # Use bindings in the Relay initialization
+        relay = SampleRelay(bindings_config=[emitter_binding, listener_binding])
+        ```
+        In this example, when `emitter()` is called, it will emit an event 
+        whose `channel` and `event_type` are `"channel1"` and `"event1"`, 
+        respectively. When this event is emitted, `listener` will be invoked 
+        with the corresponding event instance.
+
+        Returns:
+        -------
+        The method doesn't return anything, but initializes a `Relay` 
+        instance with the provided bindings configuration.
+
+        Raises:
+        ------
+        - `ValueError`: If a binding in the bindings_config list isn't 
+        instance of `Emitter` or `Listener`.
+        """
+
+
+        """ if you pass bindings, the methods inside don't have to be
+            already bound to instance. They will be bound here. 
+        """
         """ TODO: allow binding config initialization ...
             Config should contain list of Emitter and Receiver bindings
             that use methods inside the class in unbounded form
             (If class contains self.foo(self), then config should contain
-            RelayInstance.foo which will then mapped to self.foo, or if it's
-            classmethod or staticmethod, then it may be mapped to the class,
-            but I'm not sure if we are allowing this.
+            RelayInstance.foo which will then mapped to self.foo.
             So test this when you can.)
         """
-        # TODO: code here ...
-        # ...
-
+        if bindings_config:
+            for binding in bindings_config:
+                method = getattr(self, binding.method.__name__)
+                if isinstance(binding, Emitter):
+                    _binding = Emitter(method=method,
+                                       event_type=binding.event_type,
+                                       channel=binding.channel)
+                elif isinstance(binding, Listener):
+                    _binding = Listener(method=method,
+                                        event_type=binding.event_type,
+                                        channel=binding.channel,
+                                        source=binding.source)
+                else:
+                    raise ValueError(f"Invalid binding type: {type(binding)}")
+                self.add_binding(_binding)
 
     @classmethod
     async def emit(cls, event:Event):
@@ -193,7 +270,6 @@ class Relay:
                 "the method does not return anything, use '-> None'. "
                 "If the method can return anything, use '-> typing.Any'.")
 
-        
         @functools.wraps(func)  # preserve func metadata
         async def wrapper(self, *args, **kwargs):
             # DYNAMIC CHECK
@@ -387,3 +463,10 @@ class Relay:
         - `binding (Binding)`: The binding to be removed. (Listener or Emitter)
         """
         Bindings.remove(binding)
+
+    @classmethod
+    def clear_bindings(cls):
+        """
+        Removes all bindings from the `Bindings` class.
+        """
+        Bindings.clear()
