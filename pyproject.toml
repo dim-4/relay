@@ -9,5 +9,3 @@ log_cli_format = "[%(levelname)s] [%(asctime)s] [%(module)s:%(lineno)d] %(messag
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 log_format = "[%(levelname)s] [%(asctime)s] [%(module)s:%(lineno)d] %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
-
-

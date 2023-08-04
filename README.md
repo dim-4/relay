@@ -71,6 +71,6 @@ In this example, when `some_emitter()` is called, it will emit an event whose `c
 
 Relay provides robust error handling features. If the data type of the emitting event does not match with the required data type or type hints are missing/inconsistent, a `TypeError` will be raised.
 
-## Full Documentation
+## Full Documentation 
 
 Please note that the Relay package is under development, and the existing functionality may slightly change in future versions.
