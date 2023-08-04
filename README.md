@@ -7,7 +7,7 @@ Relay is a Python package that allows asynchronus inter-method communication bet
 You can install Relay through pip by running:
 
 ```
-pip install relaypy
+pip install relaypy-async
 ```
 
 ## Features
