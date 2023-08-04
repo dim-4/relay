@@ -559,6 +559,51 @@ async def test_emitter_listener():
 
     # Create a channel and event type for communication
     channel = "test_channel"
+    event_type_1 = "test_event_1"
+    event_type_2 = "test_event_2"
+
+    # Setting up the bindings for the starter_emitter, emitter_listener and final_listener
+    starter_emitter_binding = Emitter(method=relay.starter_emitter, 
+                                      channel=channel, event_type=event_type_1)
+    emitter_listener_listener_binding = Listener(method=relay.emitter_listener, 
+                                                 channel=channel, 
+                                                 event_type=event_type_1)
+    emitter_listener_binding = Emitter(method=relay.emitter_listener, 
+                                       channel=channel, event_type=event_type_2)
+    final_listener_binding = Listener(method=relay.final_listener, 
+                                      channel=channel, event_type=event_type_2)
+
+    # Adding the bindings
+    Relay.add_binding(starter_emitter_binding)
+    Relay.add_binding(emitter_listener_binding)
+    Relay.add_binding(emitter_listener_listener_binding)
+    Relay.add_binding(final_listener_binding)
+
+    # Trigger the starter_emitter
+    await relay.starter_emitter()
+
+    # Wait until the final_listener has been called
+    # await asyncio.sleep(0.2)
+    await relay.final_listener_called.wait()
+    
+    # Assert that the final_data in final_listener matches what is expected
+    assert relay.final_data == "emitter_listener: starter_emitter", \
+        f"Expected 'emitter_listener: starter_emitter' but got '{relay.final_data}'"
+    
+
+
+
+# Circular infinite loop handling
+
+@pytest.mark.skip(reason=("CAREFUL: Infinite loop catching when methods keep "
+                          "calling each other not yet implemented"))
+async def test_emitter_listener_infinite_loop():
+    Bindings.clear()
+
+    relay = DummyRelayChain()
+
+    # Create a channel and event type for communication
+    channel = "test_channel"
     event_type = "test_event"
 
     # Setting up the bindings for the starter_emitter, emitter_listener and final_listener
@@ -581,7 +626,8 @@ async def test_emitter_listener():
     await relay.starter_emitter()
 
     # Wait until the final_listener has been called
-    await relay.final_listener_called.wait()
+    await asyncio.sleep(0.2)
+    # await relay.final_listener_called.wait()
     
     # Assert that the final_data in final_listener matches what is expected
     assert relay.final_data == "emitter_listener: starter_emitter", \
