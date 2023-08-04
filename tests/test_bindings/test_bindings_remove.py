@@ -7,10 +7,6 @@ class DummyRelay(Relay):
     async def listener_method(self, *args, **kwargs):
         pass
     
-    @classmethod
-    async def class_listener_method(cls, *args, **kwargs):
-        pass
-
     async def another_listener(self, *args, **kwargs):
         pass
 
@@ -63,17 +59,6 @@ def test_remove_binding_with_relay(dummy_relay):
     Bindings.remove_relay(dummy_relay)
     assert dummy_relay not in Bindings._by_relay
     assert binding not in Bindings._by_method[dummy_relay.listener_method]
-    assert binding not in Bindings._by_chnl_and_type[binding.channel][binding.event_type]
-
-
-def test_remove_classmethod_binding():
-    Bindings.clear()
-    binding = Binding(method=DummyRelay.class_listener_method)
-    Bindings.add(binding)
-    Bindings.remove(binding)
-    assert binding not in Bindings._by_method[DummyRelay.class_listener_method]
-    # for classmethods, the 'instance' is the class itself
-    assert binding not in Bindings._by_relay[DummyRelay]
     assert binding not in Bindings._by_chnl_and_type[binding.channel][binding.event_type]
 
 def test_remove_from_empty_binding_collection(binding):

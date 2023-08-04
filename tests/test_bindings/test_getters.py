@@ -52,7 +52,8 @@ def test_get_by_method():
 
     # Adding bindings
     Bindings.add(listener_binding)
-    Bindings.add(class_binding)
+    with pytest.raises(ValueError, match="Binding method must come from Relay."):
+        Bindings.add(class_binding)
 
     # Retrieving by method
     instance_bindings = Bindings.get_by_method(relay_instance.listener_method)
@@ -60,12 +61,13 @@ def test_get_by_method():
     assert listener_binding in instance_bindings
 
     class_bindings = Bindings.get_by_method(DummyRelay.class_listener_method)
-    assert len(class_bindings) == 1
-    assert class_binding in class_bindings
+    assert len(class_bindings) == 0
+    assert class_binding not in class_bindings
 
     # Clean up for other tests
     Bindings.remove(listener_binding)
-    Bindings.remove(class_binding)
+    with pytest.raises(ValueError, match="Binding method must come from Relay."): 
+        Bindings.remove(class_binding)
 
 
 def test_get_by_method_no_bindings():

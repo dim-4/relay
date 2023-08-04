@@ -512,3 +512,53 @@ async def test_no_emit():
 
     # Check that the listener has NOT been called
     assert not relay.listener_called.is_set()
+
+
+#
+
+# class DummyRelayClassMethod(Relay):
+#     class_called = False
+#     static_called = False
+
+#     @classmethod
+#     @Relay.emits
+#     async def class_emitter(cls) -> DummyData:
+#         cls.class_called = True
+#         return DummyData(content="class_emitter")
+
+#     @staticmethod
+#     @Relay.listens
+#     async def static_listener(event:Event[DummyData]):
+#         DummyRelayClassMethod.static_called = True
+
+
+# async def test_class_and_static_methods():
+#     Bindings.clear()
+
+#     relay = DummyRelayClassMethod()
+
+#     # Create a channel and event type for communication
+#     channel = "test_channel"
+#     event_type = "test_event"
+
+#     # Setting up the bindings for emitter and listener
+#     emitter_binding = Emitter(method=relay.class_emitter, 
+#                               channel=channel, 
+#                               event_type=event_type)
+#     listener_binding = Listener(method=DummyRelayClassMethod.static_listener, 
+#                                 channel=channel, 
+#                                 event_type=event_type)
+
+#     # Adding the bindings
+#     Relay.add_binding(emitter_binding)
+#     Relay.add_binding(listener_binding)
+
+    
+#     # Trigger the emitter
+#     await relay.class_emitter()
+
+#     await asyncio.sleep(0.01)  # Allow event handling to complete
+
+#     # Check that the static listener and the class method emitter were called
+#     assert DummyRelayClassMethod.static_called, "Static method was not called"
+#     assert relay.class_called, "Class method was not called"

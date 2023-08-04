@@ -245,7 +245,7 @@ class Bindings:
         """
         if binding is None:
             return
-
+        
         channel, event_type, func, instance = cls._get_binding_data(binding)
         
         # Working with _by_chnl_and_type
@@ -401,7 +401,7 @@ class Bindings:
         event_type:str = binding.event_type
         method:Callable = binding.method
 
-        err_msg = "Binding method must come from Relay."
+        err_msg = "Binding method must come from Relay & must be bound (self)."
         if inspect.ismethod(method):
             # bound method of an instance
             instance = method.__self__
@@ -409,8 +409,8 @@ class Bindings:
                 raise ValueError(err_msg)
             # Checks if the method is bound to a class (i.e., @classmethod)
             if isinstance(instance, type):  
-                # allow class methods marked as @classmethod
-                pass  
+                # don't allow class methods marked as @classmethod
+                raise ValueError(err_msg)
         elif inspect.isfunction(method):
             # unbound function
             raise ValueError(err_msg)

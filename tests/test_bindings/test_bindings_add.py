@@ -66,13 +66,8 @@ def test_add_emitter(dummy_relay, emitter_binding):
 
 def test_add_classmethod():
     binding = Binding(method=DummyRelay.class_listener_method)
-    Bindings.add(binding)
-    assert binding in Bindings._by_method[DummyRelay.class_listener_method]
-    # instance becomes the class itself for classmethods
-    assert binding in Bindings._by_relay[DummyRelay]  
-    
-    chnl_type_dict = Bindings._by_chnl_and_type[binding.channel]
-    assert binding in chnl_type_dict[binding.event_type]
+    with pytest.raises(ValueError, match="Binding method must come from Relay."):
+        Bindings.add(binding)
 
 def test_add_invalid_method_raises_exception():
     err_msg="Binding method must come from Relay."
