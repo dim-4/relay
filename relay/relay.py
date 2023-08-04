@@ -85,18 +85,6 @@ class Relay:
         - `ValueError`: If a binding in the bindings_config list isn't 
         instance of `Emitter` or `Listener`.
         """
-
-
-        """ if you pass bindings, the methods inside don't have to be
-            already bound to instance. They will be bound here. 
-        """
-        """ TODO: allow binding config initialization ...
-            Config should contain list of Emitter and Receiver bindings
-            that use methods inside the class in unbounded form
-            (If class contains self.foo(self), then config should contain
-            RelayInstance.foo which will then mapped to self.foo.
-            So test this when you can.)
-        """
         if bindings_config:
             for binding in bindings_config:
                 method = getattr(self, binding.method.__name__)
