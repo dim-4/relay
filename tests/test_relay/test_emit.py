@@ -514,51 +514,75 @@ async def test_no_emit():
     assert not relay.listener_called.is_set()
 
 
-#
+# Chain example with a method having both emitter and listener decorators
+"""
+@Relay.emits
+@Relay.listens
+async def emitter_listener(self, ...) ...
 
-# class DummyRelayClassMethod(Relay):
-#     class_called = False
-#     static_called = False
+@Relay.listens
+async def listener(self, ...) ...
 
-#     @classmethod
-#     @Relay.emits
-#     async def class_emitter(cls) -> DummyData:
-#         cls.class_called = True
-#         return DummyData(content="class_emitter")
+@Relay.emits
+async def emitter(self, ...) ...
 
-#     @staticmethod
-#     @Relay.listens
-#     async def static_listener(event:Event[DummyData]):
-#         DummyRelayClassMethod.static_called = True
+We make emitter emit something that is listened by emitter_listener. 
+This emitter_listener, once it receives this will emit the data which 
+will be listened by listener
+"""
+
+class DummyRelayChain(Relay):
+    def __init__(self) -> None:
+        super().__init__()
+        self.final_listener_called = asyncio.Event()
+
+    @Relay.listens
+    async def final_listener(self, event:Event[DummyData]):
+        self.final_data = event.data.content
+        self.final_listener_called.set()
+
+    @Relay.emits
+    @Relay.listens
+    async def emitter_listener(self, event:Event[DummyData]) -> DummyData:
+        # re-emit the data with some modification
+        return DummyData(content=f"emitter_listener: {event.data.content}")
+
+    @Relay.emits
+    async def starter_emitter(self) -> DummyData:
+        return DummyData(content="starter_emitter")
 
 
-# async def test_class_and_static_methods():
-#     Bindings.clear()
+async def test_emitter_listener():
+    Bindings.clear()
 
-#     relay = DummyRelayClassMethod()
+    relay = DummyRelayChain()
 
-#     # Create a channel and event type for communication
-#     channel = "test_channel"
-#     event_type = "test_event"
+    # Create a channel and event type for communication
+    channel = "test_channel"
+    event_type = "test_event"
 
-#     # Setting up the bindings for emitter and listener
-#     emitter_binding = Emitter(method=relay.class_emitter, 
-#                               channel=channel, 
-#                               event_type=event_type)
-#     listener_binding = Listener(method=DummyRelayClassMethod.static_listener, 
-#                                 channel=channel, 
-#                                 event_type=event_type)
+    # Setting up the bindings for the starter_emitter, emitter_listener and final_listener
+    starter_emitter_binding = Emitter(method=relay.starter_emitter, 
+                                      channel=channel, event_type=event_type)
+    emitter_listener_binding = Emitter(method=relay.emitter_listener, 
+                                       channel=channel, event_type=event_type)
+    emitter_listener_listener_binding = Listener(method=relay.emitter_listener, 
+                                                 channel=channel, event_type=event_type)
+    final_listener_binding = Listener(method=relay.final_listener, 
+                                      channel=channel, event_type=event_type)
 
-#     # Adding the bindings
-#     Relay.add_binding(emitter_binding)
-#     Relay.add_binding(listener_binding)
+    # Adding the bindings
+    Relay.add_binding(starter_emitter_binding)
+    Relay.add_binding(emitter_listener_binding)
+    Relay.add_binding(emitter_listener_listener_binding)
+    Relay.add_binding(final_listener_binding)
 
+    # Trigger the starter_emitter
+    await relay.starter_emitter()
+
+    # Wait until the final_listener has been called
+    await relay.final_listener_called.wait()
     
-#     # Trigger the emitter
-#     await relay.class_emitter()
-
-#     await asyncio.sleep(0.01)  # Allow event handling to complete
-
-#     # Check that the static listener and the class method emitter were called
-#     assert DummyRelayClassMethod.static_called, "Static method was not called"
-#     assert relay.class_called, "Class method was not called"
+    # Assert that the final_data in final_listener matches what is expected
+    assert relay.final_data == "emitter_listener: starter_emitter", \
+        f"Expected 'emitter_listener: starter_emitter' but got '{relay.final_data}'"

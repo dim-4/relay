@@ -26,24 +26,33 @@ from relay import Relay, Event, Emitter, Listener
 
 class SampleRelay(Relay):
     @Relay.listens
-    async def listener(self, event: Event[SomeDataModel]): ...
+    async def some_listener(self, event: Event[SomeDataModel]): ...
 
     @Relay.emits
-    async def emitter(self) -> SomeDataModel:
+    async def some_emitter(self) -> SomeDataModel:
         ...
         return SomeDataModel(...)
         # or return Relay.NoEmit(SomeDataModel(...))  # if you don't want to emit 
+    
+    @Relay.emits
+    @Relay.listens
+    async def unused_emitter_and_listener(self, Event) -> SomeDataModel:
+        ...
+        if event.data > 10:
+            return Relay.Emit(SomeDataModel(...))
+        else:
+            return SomeDataModel(...)
 
 # NOTE: you can have more classes that extend Relay. They can communicate with each other.
 
 # Create bindings
 emitter_binding = Emitter(
-    method=SampleRelay.emitter, 
+    method=SampleRelay.some_emitter, 
     channel="channel1", 
     event_type="event1"
 )
 listener_binding = Listener(
-    method=SampleRelay.listener, 
+    method=SampleRelay.some_listener, 
     channel="channel1", 
     event_type="event1"
 )
@@ -53,10 +62,10 @@ relay = SampleRelay(bindings_config=[emitter_binding, listener_binding])
 
 # Emit an event (in an asyncio loop)
 ...
-await relay.emitter()
+await relay.some_emitter()
 ```
 
-In this example, when `emitter()` is called, it will emit an event whose `channel` and `event_type` are `"channel1"` and `"event1"`, respectively. When this event is emitted, `listener` will be invoked with the corresponding event instance. Awaiting the emitter does not block the execution as the event is emitted asynchronously.
+In this example, when `some_emitter()` is called, it will emit an event whose `channel` and `event_type` are `"channel1"` and `"event1"`, respectively. When this event is emitted, `some_listener` will be invoked with the corresponding event instance. Awaiting the `some_emitter` does not block the execution as the event is emitted asynchronously.
 
 ## Error Handling
 
